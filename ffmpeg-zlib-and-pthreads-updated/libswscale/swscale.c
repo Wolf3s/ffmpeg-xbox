@@ -62,9 +62,7 @@ untested special converters
 #include "rgb2rgb.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/x86_cpu.h"
-#include "libavutil/cpu.h"
 #include "libavutil/avutil.h"
-#include "libavutil/mathematics.h"
 #include "libavutil/bswap.h"
 #include "libavutil/pixdesc.h"
 
@@ -77,11 +75,18 @@ untested special converters
 //#undef ARCH_X86
 #define DITHER1XBPP
 
+#define FAST_BGR2YV12 // use 7 bit coefficients instead of 15 bit
+
+#ifdef M_PI
+#define PI M_PI
+#else
+#define PI 3.14159265358979323846
+#endif
+
 #define isPacked(x)         (       \
            (x)==PIX_FMT_PAL8        \
         || (x)==PIX_FMT_YUYV422     \
         || (x)==PIX_FMT_UYVY422     \
-        || (x)==PIX_FMT_Y400A       \
         || isAnyRGB(x)              \
     )
 
@@ -97,14 +102,14 @@ untested special converters
 #define RU (-(int)(0.169*224/255*(1<<RGB2YUV_SHIFT)+0.5))
 
 static const double rgb2yuv_table[8][9]={
-    {0.7152, 0.0722, 0.2126, -0.386, 0.5, -0.115, -0.454, -0.046, 0.5}, //ITU709
-    {0.7152, 0.0722, 0.2126, -0.386, 0.5, -0.115, -0.454, -0.046, 0.5}, //ITU709
-    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5}, //DEFAULT / ITU601 / ITU624 / SMPTE 170M
-    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5}, //DEFAULT / ITU601 / ITU624 / SMPTE 170M
+    {0.7152, 0.0722, 0.2126, -0.386, 0.5, -0.115, -0.454, -0.046, 0.5},
+    {0.7152, 0.0722, 0.2126, -0.386, 0.5, -0.115, -0.454, -0.046, 0.5},
+    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5},
+    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5},
     {0.59  , 0.11  , 0.30  , -0.331, 0.5, -0.169, -0.421, -0.079, 0.5}, //FCC
-    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5}, //DEFAULT / ITU601 / ITU624 / SMPTE 170M
-    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5}, //DEFAULT / ITU601 / ITU624 / SMPTE 170M
-    {0.701 , 0.087 , 0.212 , -0.384, 0.5, -0.116, -0.445, -0.055, 0.5}, //SMPTE 240M
+    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5},
+    {0.587 , 0.114 , 0.299 , -0.331, 0.5, -0.169, -0.419, -0.081, 0.5}, //SMPTE 170M
+    {0.701 , 0.087 , 0.212 , -0.384, 0.5  -0.116, -0.445, -0.055, 0.5}, //SMPTE 240M
 };
 
 /*
@@ -697,18 +702,6 @@ static inline void yuv2nv12XinC(const int16_t *lumFilter, const int16_t **lumSrc
             dest+=12;\
         }\
         break;\
-    case PIX_FMT_BGR48BE:\
-    case PIX_FMT_BGR48LE:\
-        func(uint8_t,0)\
-            ((uint8_t*)dest)[ 0] = ((uint8_t*)dest)[ 1] = b[Y1];\
-            ((uint8_t*)dest)[ 2] = ((uint8_t*)dest)[ 3] = g[Y1];\
-            ((uint8_t*)dest)[ 4] = ((uint8_t*)dest)[ 5] = r[Y1];\
-            ((uint8_t*)dest)[ 6] = ((uint8_t*)dest)[ 7] = b[Y2];\
-            ((uint8_t*)dest)[ 8] = ((uint8_t*)dest)[ 9] = g[Y2];\
-            ((uint8_t*)dest)[10] = ((uint8_t*)dest)[11] = r[Y2];\
-            dest+=12;\
-        }\
-        break;\
     case PIX_FMT_RGBA:\
     case PIX_FMT_BGRA:\
         if (CONFIG_SMALL) {\
@@ -1001,7 +994,7 @@ static void fillPlane(uint8_t* plane, int stride, int width, int height, int y, 
     }
 }
 
-static inline void rgb48ToY(uint8_t *dst, const uint8_t *src, long width,
+static inline void rgb48ToY(uint8_t *dst, const uint8_t *src, int width,
                             uint32_t *unused)
 {
     int i;
@@ -1016,7 +1009,7 @@ static inline void rgb48ToY(uint8_t *dst, const uint8_t *src, long width,
 
 static inline void rgb48ToUV(uint8_t *dstU, uint8_t *dstV,
                              const uint8_t *src1, const uint8_t *src2,
-                             long width, uint32_t *unused)
+                             int width, uint32_t *unused)
 {
     int i;
     assert(src1==src2);
@@ -1032,7 +1025,7 @@ static inline void rgb48ToUV(uint8_t *dstU, uint8_t *dstV,
 
 static inline void rgb48ToUV_half(uint8_t *dstU, uint8_t *dstV,
                                   const uint8_t *src1, const uint8_t *src2,
-                                  long width, uint32_t *unused)
+                                  int width, uint32_t *unused)
 {
     int i;
     assert(src1==src2);
@@ -1040,49 +1033,6 @@ static inline void rgb48ToUV_half(uint8_t *dstU, uint8_t *dstV,
         int r= src1[12*i + 0] + src1[12*i + 6];
         int g= src1[12*i + 2] + src1[12*i + 8];
         int b= src1[12*i + 4] + src1[12*i + 10];
-
-        dstU[i]= (RU*r + GU*g + BU*b + (257<<RGB2YUV_SHIFT)) >> (RGB2YUV_SHIFT+1);
-        dstV[i]= (RV*r + GV*g + BV*b + (257<<RGB2YUV_SHIFT)) >> (RGB2YUV_SHIFT+1);
-    }
-}
-
-static inline void bgr48ToY(uint8_t *dst, const uint8_t *src, long width,
-                            uint32_t *unused)
-{
-    int i;
-    for (i = 0; i < width; i++) {
-        int b = src[i*6+0];
-        int g = src[i*6+2];
-        int r = src[i*6+4];
-
-        dst[i] = (RY*r + GY*g + BY*b + (33<<(RGB2YUV_SHIFT-1))) >> RGB2YUV_SHIFT;
-    }
-}
-
-static inline void bgr48ToUV(uint8_t *dstU, uint8_t *dstV,
-                             const uint8_t *src1, const uint8_t *src2,
-                             long width, uint32_t *unused)
-{
-    int i;
-    for (i = 0; i < width; i++) {
-        int b = src1[6*i + 0];
-        int g = src1[6*i + 2];
-        int r = src1[6*i + 4];
-
-        dstU[i] = (RU*r + GU*g + BU*b + (257<<(RGB2YUV_SHIFT-1))) >> RGB2YUV_SHIFT;
-        dstV[i] = (RV*r + GV*g + BV*b + (257<<(RGB2YUV_SHIFT-1))) >> RGB2YUV_SHIFT;
-    }
-}
-
-static inline void bgr48ToUV_half(uint8_t *dstU, uint8_t *dstV,
-                                  const uint8_t *src1, const uint8_t *src2,
-                                  long width, uint32_t *unused)
-{
-    int i;
-    for (i = 0; i < width; i++) {
-        int b= src1[12*i + 0] + src1[12*i + 6];
-        int g= src1[12*i + 2] + src1[12*i + 8];
-        int r= src1[12*i + 4] + src1[12*i + 10];
 
         dstU[i]= (RU*r + GU*g + BU*b + (257<<RGB2YUV_SHIFT)) >> (RGB2YUV_SHIFT+1);
         dstV[i]= (RV*r + GV*g + BV*b + (257<<RGB2YUV_SHIFT)) >> (RGB2YUV_SHIFT+1);
@@ -1103,9 +1053,7 @@ static inline void name(uint8_t *dst, const uint8_t *src, long width, uint32_t *
 }
 
 BGR2Y(uint32_t, bgr32ToY,16, 0, 0, 0x00FF, 0xFF00, 0x00FF, RY<< 8, GY   , BY<< 8, RGB2YUV_SHIFT+8)
-BGR2Y(uint32_t,bgr321ToY,16,16, 0, 0xFF00, 0x00FF, 0xFF00, RY    , GY<<8, BY    , RGB2YUV_SHIFT+8)
 BGR2Y(uint32_t, rgb32ToY, 0, 0,16, 0x00FF, 0xFF00, 0x00FF, RY<< 8, GY   , BY<< 8, RGB2YUV_SHIFT+8)
-BGR2Y(uint32_t,rgb321ToY, 0,16,16, 0xFF00, 0x00FF, 0xFF00, RY    , GY<<8, BY    , RGB2YUV_SHIFT+8)
 BGR2Y(uint16_t, bgr16ToY, 0, 0, 0, 0x001F, 0x07E0, 0xF800, RY<<11, GY<<5, BY    , RGB2YUV_SHIFT+8)
 BGR2Y(uint16_t, bgr15ToY, 0, 0, 0, 0x001F, 0x03E0, 0x7C00, RY<<10, GY<<5, BY    , RGB2YUV_SHIFT+7)
 BGR2Y(uint16_t, rgb16ToY, 0, 0, 0, 0xF800, 0x07E0, 0x001F, RY    , GY<<5, BY<<11, RGB2YUV_SHIFT+8)
@@ -1119,14 +1067,14 @@ static inline void abgrToA(uint8_t *dst, const uint8_t *src, long width, uint32_
     }
 }
 
-#define BGR2UV(type, name, shr, shg, shb, shp, maskr, maskg, maskb, RU, GU, BU, RV, GV, BV, S) \
+#define BGR2UV(type, name, shr, shg, shb, maska, maskr, maskg, maskb, RU, GU, BU, RV, GV, BV, S)\
 static inline void name(uint8_t *dstU, uint8_t *dstV, const uint8_t *src, const uint8_t *dummy, long width, uint32_t *unused)\
 {\
     int i;\
     for (i=0; i<width; i++) {\
-        int b= ((((const type*)src)[i]>>shp)&maskb)>>shb;\
-        int g= ((((const type*)src)[i]>>shp)&maskg)>>shg;\
-        int r= ((((const type*)src)[i]>>shp)&maskr)>>shr;\
+        int b= (((const type*)src)[i]&maskb)>>shb;\
+        int g= (((const type*)src)[i]&maskg)>>shg;\
+        int r= (((const type*)src)[i]&maskr)>>shr;\
 \
         dstU[i]= ((RU)*r + (GU)*g + (BU)*b + (257<<((S)-1)))>>(S);\
         dstV[i]= ((RV)*r + (GV)*g + (BV)*b + (257<<((S)-1)))>>(S);\
@@ -1136,8 +1084,8 @@ static inline void name ## _half(uint8_t *dstU, uint8_t *dstV, const uint8_t *sr
 {\
     int i;\
     for (i=0; i<width; i++) {\
-        int pix0= ((const type*)src)[2*i+0]>>shp;\
-        int pix1= ((const type*)src)[2*i+1]>>shp;\
+        int pix0= ((const type*)src)[2*i+0];\
+        int pix1= ((const type*)src)[2*i+1];\
         int g= (pix0&~(maskr|maskb))+(pix1&~(maskr|maskb));\
         int b= ((pix0+pix1-g)&(maskb|(2*maskb)))>>shb;\
         int r= ((pix0+pix1-g)&(maskr|(2*maskr)))>>shr;\
@@ -1150,14 +1098,12 @@ static inline void name ## _half(uint8_t *dstU, uint8_t *dstV, const uint8_t *sr
     }\
 }
 
-BGR2UV(uint32_t, bgr32ToUV,16, 0, 0, 0, 0xFF0000, 0xFF00,   0x00FF, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
-BGR2UV(uint32_t,bgr321ToUV,16, 0, 0, 8, 0xFF0000, 0xFF00,   0x00FF, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
-BGR2UV(uint32_t, rgb32ToUV, 0, 0,16, 0,   0x00FF, 0xFF00, 0xFF0000, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
-BGR2UV(uint32_t,rgb321ToUV, 0, 0,16, 8,   0x00FF, 0xFF00, 0xFF0000, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
-BGR2UV(uint16_t, bgr16ToUV, 0, 0, 0, 0,   0x001F, 0x07E0,   0xF800, RU<<11, GU<<5, BU    , RV<<11, GV<<5, BV    , RGB2YUV_SHIFT+8)
-BGR2UV(uint16_t, bgr15ToUV, 0, 0, 0, 0,   0x001F, 0x03E0,   0x7C00, RU<<10, GU<<5, BU    , RV<<10, GV<<5, BV    , RGB2YUV_SHIFT+7)
-BGR2UV(uint16_t, rgb16ToUV, 0, 0, 0, 0,   0xF800, 0x07E0,   0x001F, RU    , GU<<5, BU<<11, RV    , GV<<5, BV<<11, RGB2YUV_SHIFT+8)
-BGR2UV(uint16_t, rgb15ToUV, 0, 0, 0, 0,   0x7C00, 0x03E0,   0x001F, RU    , GU<<5, BU<<10, RV    , GV<<5, BV<<10, RGB2YUV_SHIFT+7)
+BGR2UV(uint32_t, bgr32ToUV,16, 0, 0, 0xFF000000, 0xFF0000, 0xFF00,   0x00FF, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
+BGR2UV(uint32_t, rgb32ToUV, 0, 0,16, 0xFF000000,   0x00FF, 0xFF00, 0xFF0000, RU<< 8, GU   , BU<< 8, RV<< 8, GV   , BV<< 8, RGB2YUV_SHIFT+8)
+BGR2UV(uint16_t, bgr16ToUV, 0, 0, 0,          0,   0x001F, 0x07E0,   0xF800, RU<<11, GU<<5, BU    , RV<<11, GV<<5, BV    , RGB2YUV_SHIFT+8)
+BGR2UV(uint16_t, bgr15ToUV, 0, 0, 0,          0,   0x001F, 0x03E0,   0x7C00, RU<<10, GU<<5, BU    , RV<<10, GV<<5, BV    , RGB2YUV_SHIFT+7)
+BGR2UV(uint16_t, rgb16ToUV, 0, 0, 0,          0,   0xF800, 0x07E0,   0x001F, RU    , GU<<5, BU<<11, RV    , GV<<5, BV<<11, RGB2YUV_SHIFT+8)
+BGR2UV(uint16_t, rgb15ToUV, 0, 0, 0,          0,   0x7C00, 0x03E0,   0x001F, RU    , GU<<5, BU<<10, RV    , GV<<5, BV<<10, RGB2YUV_SHIFT+7)
 
 static inline void palToY(uint8_t *dst, const uint8_t *src, long width, uint32_t *pal)
 {
@@ -1205,60 +1151,42 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 
 //Note: we have C, MMX, MMX2, 3DNOW versions, there is no 3DNOW+MMX2 one
 //Plain C versions
-#if CONFIG_RUNTIME_CPUDETECT
-#  define COMPILE_C 1
-#  if   ARCH_X86
-#    define COMPILE_MMX     1
-#    define COMPILE_MMX2    1
-#    define COMPILE_3DNOW   1
-#  elif ARCH_PPC
-#    define COMPILE_ALTIVEC HAVE_ALTIVEC
-#  endif
-#else /* CONFIG_RUNTIME_CPUDETECT */
-#  if   ARCH_X86
-#    if   HAVE_MMX2
-#      define COMPILE_MMX2  1
-#    elif HAVE_AMD3DNOW
-#      define COMPILE_3DNOW 1
-#    elif HAVE_MMX
-#      define COMPILE_MMX   1
-#    else
-#      define COMPILE_C     1
-#    endif
-#  elif ARCH_PPC && HAVE_ALTIVEC
-#    define COMPILE_ALTIVEC 1
-#  else
-#    define COMPILE_C       1
-#  endif
+#if (!HAVE_MMX && !HAVE_ALTIVEC) || CONFIG_RUNTIME_CPUDETECT
+#define COMPILE_C
 #endif
 
-#ifndef COMPILE_C
-#  define COMPILE_C 0
+#if ARCH_PPC
+#if HAVE_ALTIVEC
+#define COMPILE_ALTIVEC
 #endif
-#ifndef COMPILE_MMX
-#  define COMPILE_MMX 0
+#endif //ARCH_PPC
+
+#if ARCH_X86
+
+#if (HAVE_MMX && !HAVE_AMD3DNOW && !HAVE_MMX2) || CONFIG_RUNTIME_CPUDETECT
+#define COMPILE_MMX
 #endif
-#ifndef COMPILE_MMX2
-#  define COMPILE_MMX2 0
+
+#if HAVE_MMX2 || CONFIG_RUNTIME_CPUDETECT
+#define COMPILE_MMX2
 #endif
-#ifndef COMPILE_3DNOW
-#  define COMPILE_3DNOW 0
+
+#if (HAVE_AMD3DNOW && !HAVE_MMX2) || CONFIG_RUNTIME_CPUDETECT
+#define COMPILE_3DNOW
 #endif
-#ifndef COMPILE_ALTIVEC
-#  define COMPILE_ALTIVEC 0
-#endif
+#endif //ARCH_X86
 
 #define COMPILE_TEMPLATE_MMX 0
 #define COMPILE_TEMPLATE_MMX2 0
 #define COMPILE_TEMPLATE_AMD3DNOW 0
 #define COMPILE_TEMPLATE_ALTIVEC 0
 
-#if COMPILE_C
+#ifdef COMPILE_C
 #define RENAME(a) a ## _C
 #include "swscale_template.c"
 #endif
 
-#if COMPILE_ALTIVEC
+#ifdef COMPILE_ALTIVEC
 #undef RENAME
 #undef COMPILE_TEMPLATE_ALTIVEC
 #define COMPILE_TEMPLATE_ALTIVEC 1
@@ -1269,7 +1197,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #if ARCH_X86
 
 //MMX versions
-#if COMPILE_MMX
+#ifdef COMPILE_MMX
 #undef RENAME
 #undef COMPILE_TEMPLATE_MMX
 #undef COMPILE_TEMPLATE_MMX2
@@ -1282,7 +1210,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #endif
 
 //MMX2 versions
-#if COMPILE_MMX2
+#ifdef COMPILE_MMX2
 #undef RENAME
 #undef COMPILE_TEMPLATE_MMX
 #undef COMPILE_TEMPLATE_MMX2
@@ -1295,7 +1223,7 @@ static inline void monoblack2Y(uint8_t *dst, const uint8_t *src, long width, uin
 #endif
 
 //3DNOW versions
-#if COMPILE_3DNOW
+#ifdef COMPILE_3DNOW
 #undef RENAME
 #undef COMPILE_TEMPLATE_MMX
 #undef COMPILE_TEMPLATE_MMX2
@@ -1314,12 +1242,6 @@ SwsFunc ff_getSwsFunc(SwsContext *c)
 #if CONFIG_RUNTIME_CPUDETECT
     int flags = c->flags;
 
-    int cpuflags = av_get_cpu_flags();
-
-    flags |= (cpuflags & AV_CPU_FLAG_MMX ? SWS_CPU_CAPS_MMX : 0);
-    flags |= (cpuflags & AV_CPU_FLAG_MMX2 ? SWS_CPU_CAPS_MMX2 : 0);
-    flags |= (cpuflags & AV_CPU_FLAG_3DNOW ? SWS_CPU_CAPS_3DNOW : 0);
-
 #if ARCH_X86
     // ordered per speed fastest first
     if (flags & SWS_CPU_CAPS_MMX2) {
@@ -1337,7 +1259,7 @@ SwsFunc ff_getSwsFunc(SwsContext *c)
     }
 
 #else
-#if COMPILE_ALTIVEC
+#ifdef COMPILE_ALTIVEC
     if (flags & SWS_CPU_CAPS_ALTIVEC) {
         sws_init_swScale_altivec(c);
         return swScale_altivec;
@@ -1369,31 +1291,24 @@ SwsFunc ff_getSwsFunc(SwsContext *c)
 #endif //!CONFIG_RUNTIME_CPUDETECT
 }
 
-static void copyPlane(const uint8_t *src, int srcStride,
-                      int srcSliceY, int srcSliceH, int width,
-                      uint8_t *dst, int dstStride)
-{
-    dst += dstStride * srcSliceY;
-    if (dstStride == srcStride && srcStride > 0) {
-        memcpy(dst, src, srcSliceH * dstStride);
-    } else {
-        int i;
-        for (i=0; i<srcSliceH; i++) {
-            memcpy(dst, src, width);
-            src += srcStride;
-            dst += dstStride;
-        }
-    }
-}
-
 static int planarToNv12Wrapper(SwsContext *c, const uint8_t* src[], int srcStride[], int srcSliceY,
                                int srcSliceH, uint8_t* dstParam[], int dstStride[])
 {
-    uint8_t *dst = dstParam[1] + dstStride[1]*srcSliceY/2;
-
-    copyPlane(src[0], srcStride[0], srcSliceY, srcSliceH, c->srcW,
-              dstParam[0], dstStride[0]);
-
+    uint8_t *dst=dstParam[0] + dstStride[0]*srcSliceY;
+    /* Copy Y plane */
+    if (dstStride[0]==srcStride[0] && srcStride[0] > 0)
+        memcpy(dst, src[0], srcSliceH*dstStride[0]);
+    else {
+        int i;
+        const uint8_t *srcPtr= src[0];
+        uint8_t *dstPtr= dst;
+        for (i=0; i<srcSliceH; i++) {
+            memcpy(dstPtr, srcPtr, c->srcW);
+            srcPtr+= srcStride[0];
+            dstPtr+= dstStride[0];
+        }
+    }
+    dst = dstParam[1] + dstStride[1]*srcSliceY/2;
     if (c->dstFormat == PIX_FMT_NV12)
         interleaveBytes(src[1], src[2], dst, c->srcW/2, srcSliceH/2, srcStride[1], srcStride[2], dstStride[0]);
     else
@@ -1496,34 +1411,6 @@ static int uyvyToYuv422Wrapper(SwsContext *c, const uint8_t* src[], int srcStrid
     return srcSliceH;
 }
 
-static void gray8aToPacked32(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
-{
-    long i;
-    for (i=0; i<num_pixels; i++)
-        ((uint32_t *) dst)[i] = ((const uint32_t *)palette)[src[i<<1]] | (src[(i<<1)+1] << 24);
-}
-
-static void gray8aToPacked32_1(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
-{
-    long i;
-
-    for (i=0; i<num_pixels; i++)
-        ((uint32_t *) dst)[i] = ((const uint32_t *)palette)[src[i<<1]] | src[(i<<1)+1];
-}
-
-static void gray8aToPacked24(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
-{
-    long i;
-
-    for (i=0; i<num_pixels; i++) {
-        //FIXME slow?
-        dst[0]= palette[src[i<<1]*4+0];
-        dst[1]= palette[src[i<<1]*4+1];
-        dst[2]= palette[src[i<<1]*4+2];
-        dst+= 3;
-    }
-}
-
 static int palToRgbWrapper(SwsContext *c, const uint8_t* src[], int srcStride[], int srcSliceY,
                            int srcSliceH, uint8_t* dst[], int dstStride[])
 {
@@ -1535,20 +1422,7 @@ static int palToRgbWrapper(SwsContext *c, const uint8_t* src[], int srcStride[],
     uint8_t *dstPtr= dst[0] + dstStride[0]*srcSliceY;
     const uint8_t *srcPtr= src[0];
 
-#ifdef _MSC_VER
-	AVPixFmtDescriptor *av_pix_fmt_descriptors = get_av_pix_fmt_descriptors();
-#endif
-
-    if (srcFormat == PIX_FMT_Y400A) {
-        switch (dstFormat) {
-        case PIX_FMT_RGB32  : conv = gray8aToPacked32; break;
-        case PIX_FMT_BGR32  : conv = gray8aToPacked32; break;
-        case PIX_FMT_BGR32_1: conv = gray8aToPacked32_1; break;
-        case PIX_FMT_RGB32_1: conv = gray8aToPacked32_1; break;
-        case PIX_FMT_RGB24  : conv = gray8aToPacked24; break;
-        case PIX_FMT_BGR24  : conv = gray8aToPacked24; break;
-        }
-    } else if (usePal(srcFormat)) {
+    if (usePal(srcFormat)) {
         switch (dstFormat) {
         case PIX_FMT_RGB32  : conv = sws_convertPalette8ToPacked32; break;
         case PIX_FMT_BGR32  : conv = sws_convertPalette8ToPacked32; break;
@@ -1692,13 +1566,33 @@ static int bgr24ToYv12Wrapper(SwsContext *c, const uint8_t* src[], int srcStride
 static int yvu9ToYv12Wrapper(SwsContext *c, const uint8_t* src[], int srcStride[], int srcSliceY,
                              int srcSliceH, uint8_t* dst[], int dstStride[])
 {
-    copyPlane(src[0], srcStride[0], srcSliceY, srcSliceH, c->srcW,
-              dst[0], dstStride[0]);
+    int i;
 
-    planar2x(src[1], dst[1] + dstStride[1]*(srcSliceY >> 1), c->chrSrcW,
-             srcSliceH >> 2, srcStride[1], dstStride[1]);
-    planar2x(src[2], dst[2] + dstStride[2]*(srcSliceY >> 1), c->chrSrcW,
-             srcSliceH >> 2, srcStride[2], dstStride[2]);
+    /* copy Y */
+    if (srcStride[0]==dstStride[0] && srcStride[0] > 0)
+        memcpy(dst[0]+ srcSliceY*dstStride[0], src[0], srcStride[0]*srcSliceH);
+    else {
+        const uint8_t *srcPtr= src[0];
+        uint8_t *dstPtr= dst[0] + dstStride[0]*srcSliceY;
+
+        for (i=0; i<srcSliceH; i++) {
+            memcpy(dstPtr, srcPtr, c->srcW);
+            srcPtr+= srcStride[0];
+            dstPtr+= dstStride[0];
+        }
+    }
+
+    if (c->dstFormat==PIX_FMT_YUV420P || c->dstFormat==PIX_FMT_YUVA420P) {
+        planar2x(src[1], dst[1] + dstStride[1]*(srcSliceY >> 1), c->chrSrcW,
+                 srcSliceH >> 2, srcStride[1], dstStride[1]);
+        planar2x(src[2], dst[2] + dstStride[2]*(srcSliceY >> 1), c->chrSrcW,
+                 srcSliceH >> 2, srcStride[2], dstStride[2]);
+    } else {
+        planar2x(src[1], dst[2] + dstStride[2]*(srcSliceY >> 1), c->chrSrcW,
+                 srcSliceH >> 2, srcStride[1], dstStride[2]);
+        planar2x(src[2], dst[1] + dstStride[1]*(srcSliceY >> 1), c->chrSrcW,
+                 srcSliceH >> 2, srcStride[2], dstStride[1]);
+    }
     if (dst[3])
         fillPlane(dst[3], dstStride[3], c->srcW, srcSliceH, srcSliceY, 255);
     return srcSliceH;
@@ -1734,9 +1628,6 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
                              int srcSliceH, uint8_t* dst[], int dstStride[])
 {
     int plane, i, j;
-#ifdef _MSC_VER
-	AVPixFmtDescriptor *av_pix_fmt_descriptors = get_av_pix_fmt_descriptors();
-#endif
     for (plane=0; plane<4; plane++) {
         int length= (plane==0 || plane==3) ? c->srcW  : -((-c->srcW  )>>c->chrDstHSubSample);
         int y=      (plane==0 || plane==3) ? srcSliceY: -((-srcSliceY)>>c->chrDstVSubSample);
@@ -1752,28 +1643,7 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
                 length*=2;
             fillPlane(dst[plane], dstStride[plane], length, height, y, (plane==3) ? 255 : 128);
         } else {
-            if(isNBPS(c->srcFormat)) {
-                const int depth = av_pix_fmt_descriptors[c->srcFormat].comp[plane].depth_minus1+1;
-                uint16_t *srcPtr2 = (uint16_t*)srcPtr;
-
-                if (is16BPS(c->dstFormat)) {
-                    uint16_t *dstPtr2 = (uint16_t*)dstPtr;
-                    for (i = 0; i < height; i++) {
-                        for (j = 0; j < length; j++)
-                            dstPtr2[j] = (srcPtr2[j]<<(16-depth)) | (srcPtr2[j]>>(2*depth-16));
-                        dstPtr2 += dstStride[plane]/2;
-                        srcPtr2 += srcStride[plane]/2;
-                    }
-                } else {
-                    // FIXME Maybe dither instead.
-                    for (i = 0; i < height; i++) {
-                        for (j = 0; j < length; j++)
-                            dstPtr[j] = srcPtr2[j]>>(depth-8);
-                        dstPtr  += dstStride[plane];
-                        srcPtr2 += srcStride[plane]/2;
-                    }
-                }
-            } else if(is16BPS(c->srcFormat) && !is16BPS(c->dstFormat)) {
+            if(is16BPS(c->srcFormat) && !is16BPS(c->dstFormat)) {
                 if (!isBE(c->srcFormat)) srcPtr++;
                 for (i=0; i<height; i++) {
                     for (j=0; j<length; j++) dstPtr[j] = srcPtr[j<<1];
@@ -1794,15 +1664,13 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
 
                 for (i=0; i<height; i++) {
                     for (j=0; j<length; j++)
-                        ((uint16_t*)dstPtr)[j] = av_bswap16(((const uint16_t*)srcPtr)[j]);
+                        ((uint16_t*)dstPtr)[j] = bswap_16(((const uint16_t*)srcPtr)[j]);
                     srcPtr+= srcStride[plane];
                     dstPtr+= dstStride[plane];
                 }
-            } else if (dstStride[plane] == srcStride[plane] &&
-                       srcStride[plane] > 0 && srcStride[plane] == length) {
-                memcpy(dst[plane] + dstStride[plane]*y, src[plane],
-                       height*dstStride[plane]);
-            } else {
+            } else if (dstStride[plane]==srcStride[plane] && srcStride[plane] > 0)
+                memcpy(dst[plane] + dstStride[plane]*y, src[plane], height*dstStride[plane]);
+            else {
                 if(is16BPS(c->srcFormat) && is16BPS(c->dstFormat))
                     length*=2;
                 for (i=0; i<height; i++) {
@@ -1841,10 +1709,6 @@ void ff_get_unscaled_swscale(SwsContext *c)
     const int dstH = c->dstH;
     int needsDither;
 
-#ifdef _MSC_VER
-	AVPixFmtDescriptor *av_pix_fmt_descriptors = get_av_pix_fmt_descriptors();
-#endif
-
     needsDither= isAnyRGB(dstFormat)
         &&  c->dstFormatBpp < 24
         && (c->dstFormatBpp < c->srcFormatBpp || (!isAnyRGB(srcFormat)));
@@ -1880,8 +1744,6 @@ void ff_get_unscaled_swscale(SwsContext *c)
         && srcFormat != PIX_FMT_MONOWHITE && dstFormat != PIX_FMT_MONOWHITE
         && srcFormat != PIX_FMT_RGB48LE   && dstFormat != PIX_FMT_RGB48LE
         && srcFormat != PIX_FMT_RGB48BE   && dstFormat != PIX_FMT_RGB48BE
-        && srcFormat != PIX_FMT_BGR48LE   && dstFormat != PIX_FMT_BGR48LE
-        && srcFormat != PIX_FMT_BGR48BE   && dstFormat != PIX_FMT_BGR48BE
         && (!needsDither || (c->flags&(SWS_FAST_BILINEAR|SWS_POINT))))
         c->swScale= rgbToRgbWrapper;
 
@@ -1920,7 +1782,7 @@ void ff_get_unscaled_swscale(SwsContext *c)
     if(srcFormat == PIX_FMT_UYVY422 && dstFormat == PIX_FMT_YUV422P)
         c->swScale= uyvyToYuv422Wrapper;
 
-#if COMPILE_ALTIVEC
+#ifdef COMPILE_ALTIVEC
     if ((c->flags & SWS_CPU_CAPS_ALTIVEC) &&
         !(c->flags & SWS_BITEXACT) &&
         srcFormat == PIX_FMT_YUV420P) {
@@ -1958,9 +1820,6 @@ void ff_get_unscaled_swscale(SwsContext *c)
 
 static void reset_ptr(const uint8_t* src[], int format)
 {
-#ifdef _MSC_VER
-	AVPixFmtDescriptor *av_pix_fmt_descriptors = get_av_pix_fmt_descriptors();
-#endif
     if(!isALPHA(format))
         src[3]=NULL;
     if(!isPlanarYUV(format)) {
@@ -1969,24 +1828,6 @@ static void reset_ptr(const uint8_t* src[], int format)
         if (!usePal(format))
             src[1]= NULL;
     }
-}
-
-static int check_image_pointers(uint8_t *data[4], enum PixelFormat pix_fmt,
-                                const int linesizes[4])
-{
-#ifdef _MSC_VER
-	AVPixFmtDescriptor *av_pix_fmt_descriptors = get_av_pix_fmt_descriptors();
-#endif
-    const AVPixFmtDescriptor *desc = &av_pix_fmt_descriptors[pix_fmt];
-    int i;
-
-    for (i = 0; i < 4; i++) {
-        int plane = desc->comp[i].plane;
-        if (!data[plane] || !linesizes[plane])
-            return 0;
-    }
-
-    return 1;
 }
 
 /**
@@ -1999,21 +1840,10 @@ int sws_scale(SwsContext *c, const uint8_t* const src[], const int srcStride[], 
     int i;
     const uint8_t* src2[4]= {src[0], src[1], src[2], src[3]};
     uint8_t* dst2[4]= {dst[0], dst[1], dst[2], dst[3]};
-#ifdef _MSC_VER
-	AVPixFmtDescriptor *av_pix_fmt_descriptors = get_av_pix_fmt_descriptors();
-#endif
+
     // do not mess up sliceDir if we have a "trailing" 0-size slice
     if (srcSliceH == 0)
         return 0;
-
-    if (!check_image_pointers(src, c->srcFormat, srcStride)) {
-        av_log(c, AV_LOG_ERROR, "bad src image pointers\n");
-        return 0;
-    }
-    if (!check_image_pointers(dst, c->dstFormat, dstStride)) {
-        av_log(c, AV_LOG_ERROR, "bad dst image pointers\n");
-        return 0;
-    }
 
     if (c->sliceDir == 0 && srcSliceY != 0 && srcSliceY + srcSliceH != c->srcH) {
         av_log(c, AV_LOG_ERROR, "Slices start in the middle!\n");
@@ -2043,7 +1873,7 @@ int sws_scale(SwsContext *c, const uint8_t* const src[], const int srcStride[], 
                 r= (i>>3    )*255;
                 g= ((i>>1)&3)*85;
                 b= (i&1     )*255;
-            } else if(c->srcFormat == PIX_FMT_GRAY8 || c->srcFormat == PIX_FMT_Y400A) {
+            } else if(c->srcFormat == PIX_FMT_GRAY8) {
                 r = g = b = i;
             } else {
                 assert(c->srcFormat == PIX_FMT_BGR4_BYTE);

@@ -99,16 +99,6 @@ const int *sws_getCoefficients(int colorspace)
     dst[12*i+ 8] = dst[12*i+ 9] = g[Y]; \
     dst[12*i+10] = dst[12*i+11] = b[Y];
 
-#define PUTBGR48(dst,src,i)             \
-    Y = src[2*i];                       \
-    dst[12*i+ 0] = dst[12*i+ 1] = b[Y]; \
-    dst[12*i+ 2] = dst[12*i+ 3] = g[Y]; \
-    dst[12*i+ 4] = dst[12*i+ 5] = r[Y]; \
-    Y = src[2*i+1];                     \
-    dst[12*i+ 6] = dst[12*i+ 7] = b[Y]; \
-    dst[12*i+ 8] = dst[12*i+ 9] = g[Y]; \
-    dst[12*i+10] = dst[12*i+11] = r[Y];
-
 #define YUV2RGBFUNC(func_name, dst_type, alpha) \
 static int func_name(SwsContext *c, const uint8_t* src[], int srcStride[], int srcSliceY, \
                      int srcSliceH, uint8_t* dst[], int dstStride[]) \
@@ -183,32 +173,6 @@ ENDYUV2RGBLINE(48)
     LOADCHROMA(1);
     PUTRGB48(dst_2,py_2,1);
     PUTRGB48(dst_1,py_1,1);
-ENDYUV2RGBFUNC()
-
-YUV2RGBFUNC(yuv2rgb_c_bgr48, uint8_t, 0)
-    LOADCHROMA(0);
-    PUTBGR48(dst_1,py_1,0);
-    PUTBGR48(dst_2,py_2,0);
-
-    LOADCHROMA(1);
-    PUTBGR48(dst_2,py_2,1);
-    PUTBGR48(dst_1,py_1,1);
-
-    LOADCHROMA(2);
-    PUTBGR48(dst_1,py_1,2);
-    PUTBGR48(dst_2,py_2,2);
-
-    LOADCHROMA(3);
-    PUTBGR48(dst_2,py_2,3);
-    PUTBGR48(dst_1,py_1,3);
-ENDYUV2RGBLINE(48)
-    LOADCHROMA(0);
-    PUTBGR48(dst_1,py_1,0);
-    PUTBGR48(dst_2,py_2,0);
-
-    LOADCHROMA(1);
-    PUTBGR48(dst_2,py_2,1);
-    PUTBGR48(dst_1,py_1,1);
 ENDYUV2RGBFUNC()
 
 YUV2RGBFUNC(yuv2rgb_c_32, uint32_t, 0)
@@ -604,8 +568,6 @@ SwsFunc ff_yuv2rgb_get_func_ptr(SwsContext *c)
     av_log(c, AV_LOG_WARNING, "No accelerated colorspace conversion found from %s to %s.\n", sws_format_name(c->srcFormat), sws_format_name(c->dstFormat));
 
     switch (c->dstFormat) {
-    case PIX_FMT_BGR48BE:
-    case PIX_FMT_BGR48LE:    return yuv2rgb_c_bgr48;
     case PIX_FMT_RGB48BE:
     case PIX_FMT_RGB48LE:    return yuv2rgb_c_48;
     case PIX_FMT_ARGB:
@@ -633,11 +595,10 @@ SwsFunc ff_yuv2rgb_get_func_ptr(SwsContext *c)
     return NULL;
 }
 
-static void fill_table(uint8_t* table[256], const int elemsize, const int inc, void *y_tab)
+static void fill_table(uint8_t* table[256], const int elemsize, const int inc, uint8_t *y_table)
 {
     int i;
     int64_t cb = 0;
-    uint8_t *y_table = y_tab;
 
     y_table -= elemsize * (inc >> 9);
 
@@ -657,14 +618,6 @@ static void fill_gv_table(int table[256], const int elemsize, const int inc)
         table[i] = elemsize * (off + (cb >> 16));
         cb += inc;
     }
-}
-
-static uint16_t roundToInt16(int64_t f)
-{
-    int r= (f + (1<<15))>>16;
-         if (r<-0x7FFF) return 0x8000;
-    else if (r> 0x7FFF) return 0x7FFF;
-    else                return r;
 }
 
 av_cold int ff_yuv2rgb_c_init_tables(SwsContext *c, const int inv_table[4], int fullRange,
@@ -721,22 +674,6 @@ av_cold int ff_yuv2rgb_c_init_tables(SwsContext *c, const int inv_table[4], int 
     cgu = (cgu*contrast * saturation) >> 32;
     cgv = (cgv*contrast * saturation) >> 32;
     oy -= 256*brightness;
-
-    c->uOffset=   0x0400040004000400LL;
-    c->vOffset=   0x0400040004000400LL;
-    c->yCoeff=    roundToInt16(cy *8192) * 0x0001000100010001ULL;
-    c->vrCoeff=   roundToInt16(crv*8192) * 0x0001000100010001ULL;
-    c->ubCoeff=   roundToInt16(cbu*8192) * 0x0001000100010001ULL;
-    c->vgCoeff=   roundToInt16(cgv*8192) * 0x0001000100010001ULL;
-    c->ugCoeff=   roundToInt16(cgu*8192) * 0x0001000100010001ULL;
-    c->yOffset=   roundToInt16(oy *   8) * 0x0001000100010001ULL;
-
-    c->yuv2rgb_y_coeff  = (int16_t)roundToInt16(cy <<13);
-    c->yuv2rgb_y_offset = (int16_t)roundToInt16(oy << 9);
-    c->yuv2rgb_v2r_coeff= (int16_t)roundToInt16(crv<<13);
-    c->yuv2rgb_v2g_coeff= (int16_t)roundToInt16(cgv<<13);
-    c->yuv2rgb_u2g_coeff= (int16_t)roundToInt16(cgu<<13);
-    c->yuv2rgb_u2b_coeff= (int16_t)roundToInt16(cbu<<13);
 
     //scale coefficients by cy
     crv = ((crv << 16) + 0x8000) / cy;
@@ -813,7 +750,7 @@ av_cold int ff_yuv2rgb_c_init_tables(SwsContext *c, const int inv_table[4], int 
         }
         if (isNotNe)
             for (i = 0; i < 1024*3; i++)
-                y_table16[i] = av_bswap16(y_table16[i]);
+                y_table16[i] = bswap_16(y_table16[i]);
         fill_table(c->table_rV, 2, crv, y_table16 + yoffs);
         fill_table(c->table_gU, 2, cgu, y_table16 + yoffs + 1024);
         fill_table(c->table_bU, 2, cbu, y_table16 + yoffs + 2048);
@@ -836,7 +773,7 @@ av_cold int ff_yuv2rgb_c_init_tables(SwsContext *c, const int inv_table[4], int 
         }
         if(isNotNe)
             for (i = 0; i < 1024*3; i++)
-                y_table16[i] = av_bswap16(y_table16[i]);
+                y_table16[i] = bswap_16(y_table16[i]);
         fill_table(c->table_rV, 2, crv, y_table16 + yoffs);
         fill_table(c->table_gU, 2, cgu, y_table16 + yoffs + 1024);
         fill_table(c->table_bU, 2, cbu, y_table16 + yoffs + 2048);

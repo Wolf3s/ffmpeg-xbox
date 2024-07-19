@@ -31,12 +31,10 @@
 
 #define STR(s)         AV_TOSTRING(s) //AV_STRINGIFY is too long
 
-#define FAST_BGR2YV12 //use 7-bit instead of 15-bit coefficients
-
 #define MAX_FILTER_SIZE 256
 
 #if ARCH_X86
-#define VOFW 21504
+#define VOFW 5120
 #else
 #define VOFW 2048 // faster on PPC and not tested on others
 #endif
@@ -307,8 +305,8 @@ typedef struct SwsContext {
                    int xInc, const int16_t *filter, const int16_t *filterPos,
                    long filterSize);
 
-    void (*lumConvertRange)(int16_t *dst, int width); ///< Color range conversion function for luma plane if needed.
-    void (*chrConvertRange)(int16_t *dst, int width); ///< Color range conversion function for chroma planes if needed.
+    void (*lumConvertRange)(uint16_t *dst, int width); ///< Color range conversion function for luma plane if needed.
+    void (*chrConvertRange)(uint16_t *dst, int width); ///< Color range conversion function for chroma planes if needed.
 
     int lumSrcOffset; ///< Offset given to luma src pointers passed to horizontal input functions.
     int chrSrcOffset; ///< Offset given to chroma src pointers passed to horizontal input functions.
@@ -333,8 +331,8 @@ SwsFunc ff_yuv2rgb_init_altivec(SwsContext *c);
 SwsFunc ff_yuv2rgb_get_func_ptr_bfin(SwsContext *c);
 void ff_bfin_get_unscaled_swscale(SwsContext *c);
 void ff_yuv2packedX_altivec(SwsContext *c,
-                            const int16_t *lumFilter, const int16_t **lumSrc, int lumFilterSize,
-                            const int16_t *chrFilter, const int16_t **chrSrc, int chrFilterSize,
+                            const int16_t *lumFilter, int16_t **lumSrc, int lumFilterSize,
+                            const int16_t *chrFilter, int16_t **chrSrc, int chrFilterSize,
                             uint8_t *dest, int dstW, int dstY);
 
 const char *sws_format_name(enum PixelFormat format);
@@ -343,22 +341,14 @@ const char *sws_format_name(enum PixelFormat format);
 #define is16BPS(x)      (           \
            (x)==PIX_FMT_GRAY16BE    \
         || (x)==PIX_FMT_GRAY16LE    \
-        || (x)==PIX_FMT_BGR48BE     \
-        || (x)==PIX_FMT_BGR48LE     \
         || (x)==PIX_FMT_RGB48BE     \
         || (x)==PIX_FMT_RGB48LE     \
-        || (x)==PIX_FMT_YUV420P16LE \
-        || (x)==PIX_FMT_YUV422P16LE \
-        || (x)==PIX_FMT_YUV444P16LE \
-        || (x)==PIX_FMT_YUV420P16BE \
-        || (x)==PIX_FMT_YUV422P16BE \
-        || (x)==PIX_FMT_YUV444P16BE \
-    )
-#define isNBPS(x)       (           \
-           (x)==PIX_FMT_YUV420P9LE  \
-        || (x)==PIX_FMT_YUV420P9BE  \
-        || (x)==PIX_FMT_YUV420P10LE \
-        || (x)==PIX_FMT_YUV420P10BE \
+        || (x)==PIX_FMT_YUV420P16LE   \
+        || (x)==PIX_FMT_YUV422P16LE   \
+        || (x)==PIX_FMT_YUV444P16LE   \
+        || (x)==PIX_FMT_YUV420P16BE   \
+        || (x)==PIX_FMT_YUV422P16BE   \
+        || (x)==PIX_FMT_YUV444P16BE   \
     )
 #define isBE(x) ((x)&1)
 #define isPlanar8YUV(x) (           \
@@ -374,16 +364,12 @@ const char *sws_format_name(enum PixelFormat format);
     )
 #define isPlanarYUV(x)  (           \
         isPlanar8YUV(x)             \
-        || (x)==PIX_FMT_YUV420P9LE  \
-        || (x)==PIX_FMT_YUV420P10LE \
-        || (x)==PIX_FMT_YUV420P16LE \
-        || (x)==PIX_FMT_YUV422P16LE \
-        || (x)==PIX_FMT_YUV444P16LE \
-        || (x)==PIX_FMT_YUV420P9BE  \
-        || (x)==PIX_FMT_YUV420P10BE \
-        || (x)==PIX_FMT_YUV420P16BE \
-        || (x)==PIX_FMT_YUV422P16BE \
-        || (x)==PIX_FMT_YUV444P16BE \
+        || (x)==PIX_FMT_YUV420P16LE   \
+        || (x)==PIX_FMT_YUV422P16LE   \
+        || (x)==PIX_FMT_YUV444P16LE   \
+        || (x)==PIX_FMT_YUV420P16BE   \
+        || (x)==PIX_FMT_YUV422P16BE   \
+        || (x)==PIX_FMT_YUV444P16BE   \
     )
 #define isYUV(x)        (           \
            (x)==PIX_FMT_UYVY422     \
@@ -392,7 +378,6 @@ const char *sws_format_name(enum PixelFormat format);
     )
 #define isGray(x)       (           \
            (x)==PIX_FMT_GRAY8       \
-        || (x)==PIX_FMT_Y400A      \
         || (x)==PIX_FMT_GRAY16BE    \
         || (x)==PIX_FMT_GRAY16LE    \
     )
@@ -419,9 +404,7 @@ const char *sws_format_name(enum PixelFormat format);
         || (x)==PIX_FMT_MONOWHITE   \
     )
 #define isBGRinInt(x)   (           \
-           (x)==PIX_FMT_BGR48BE     \
-        || (x)==PIX_FMT_BGR48LE     \
-        || (x)==PIX_FMT_BGR32       \
+           (x)==PIX_FMT_BGR32       \
         || (x)==PIX_FMT_BGR32_1     \
         || (x)==PIX_FMT_BGR24       \
         || (x)==PIX_FMT_BGR565BE    \
@@ -444,9 +427,7 @@ const char *sws_format_name(enum PixelFormat format);
         || (x)==PIX_FMT_RGB24       \
     )
 #define isBGRinBytes(x) (           \
-           (x)==PIX_FMT_BGR48BE     \
-        || (x)==PIX_FMT_BGR48LE     \
-        || (x)==PIX_FMT_BGRA        \
+           (x)==PIX_FMT_BGRA        \
         || (x)==PIX_FMT_ABGR        \
         || (x)==PIX_FMT_BGR24       \
     )
@@ -459,10 +440,9 @@ const char *sws_format_name(enum PixelFormat format);
         || (x)==PIX_FMT_BGR32_1     \
         || (x)==PIX_FMT_RGB32       \
         || (x)==PIX_FMT_RGB32_1     \
-        || (x)==PIX_FMT_Y400A       \
         || (x)==PIX_FMT_YUVA420P    \
     )
-#define usePal(x) ((av_pix_fmt_descriptors[x].flags & PIX_FMT_PAL) || (x) == PIX_FMT_Y400A)
+#define usePal(x) (av_pix_fmt_descriptors[x].flags & PIX_FMT_PAL)
 
 extern const uint64_t ff_dither4[2];
 extern const uint64_t ff_dither8[2];
