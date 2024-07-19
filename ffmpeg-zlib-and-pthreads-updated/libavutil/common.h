@@ -27,12 +27,12 @@
 #define AVUTIL_COMMON_H
 
 #ifdef _MSC_VER
-#include "..\vcproj\external\include\msvc-compat.h"
+#include <cbrt.h>
 #endif
 
 #include <ctype.h>
 #include <errno.h>
-#include "..\vcproj\external\include\inttypes.h"
+#include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -47,7 +47,9 @@
 #   define AV_NE(be, le) (le)
 #endif
 
+#ifndef UINT64_C //ANDRÉ: Added this as xbox supports stdint.h on his latest version.
 #define UINT64_C(val) val##ui64 //MARTY
+#endif
 
 //rounded division & shift
 #define RSHIFT(a,b) ((a) > 0 ? ((a) + ((1<<(b))>>1))>>(b) : ((a) + ((1<<(b))>>1)-1)>>(b))

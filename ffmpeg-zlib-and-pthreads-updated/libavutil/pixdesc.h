@@ -22,7 +22,7 @@
 #ifndef AVUTIL_PIXDESC_H
 #define AVUTIL_PIXDESC_H
 
-#include "..\vcproj\external\include\inttypes.h"
+#include <inttypes.h>
 
 typedef struct AVComponentDescriptor{
     uint16_t plane        :2;            ///< which of the 4 planes contains the component

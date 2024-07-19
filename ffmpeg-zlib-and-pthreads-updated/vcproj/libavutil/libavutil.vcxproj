@@ -194,8 +194,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\external\include;..\..</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;_XBOX;HAVE_AV_CONFIG_H</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\external;..\external\include;..\;..\..</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;_XBOX;HAVE_AV_CONFIG_H;__asm__=__asm;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <WarningLevel>Level3</WarningLevel>
@@ -216,7 +216,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DEBUG;_XBOX;HAVE_AV_CONFIG_H</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DEBUG;_XBOX;__asm__=__asm;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan;HAVE_AV_CONFIG_H</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
       <CompileAs>CompileAsC</CompileAs>
