@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 typedef enum 
 {
 	DEVICE_FIXED_START,
@@ -47,7 +45,7 @@ extern "C" int __stdcall ObDeleteSymbolicLink( STRING* );
 
 class cDrives {
 public:
-	static int Mount( string MountPoint );
-	static int DriveMounted( string path);
-	static vector<string> mountAll();
+	static int Mount( std::string MountPoint );
+	static int DriveMounted( std::string path);
+	static std::vector<string> mountAll();
 };

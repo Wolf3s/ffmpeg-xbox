@@ -201,7 +201,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\external;..\external\include;..\;..\..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\external;..\external\include;..\external\zlib\;..\;..\..\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;_XBOX;HAVE_AV_CONFIG_H;__asm__=__asm;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StringPooling>true</StringPooling>
@@ -227,6 +227,24 @@
       <DisableSpecificWarnings>4305</DisableSpecificWarnings>
       <ForcedIncludeFiles>config.h</ForcedIncludeFiles>
       <InlineAssemblyOptimization>true</InlineAssemblyOptimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
+    <ClCompile>
+      <StructMemberAlignment>16Bytes</StructMemberAlignment>
+      <CompileAs>CompileAsC</CompileAs>
+      <AdditionalIncludeDirectories>..\..;..\external;..\external\include;..\external\zlib</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <PreprocessorDefinitions>XBOX;NDEBUG;_LIB;_XBOX;HAVE_AV_CONFIG_H;_CRT_DISABLE_PERFCRIT_LOCKS;_M_PPCBE;MSC_STRUCTS;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan</PreprocessorDefinitions>
+      <ForcedIncludeFiles>config.h</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4305</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

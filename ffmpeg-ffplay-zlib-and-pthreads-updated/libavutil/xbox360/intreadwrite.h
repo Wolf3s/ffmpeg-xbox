@@ -101,7 +101,8 @@ static av_always_inline void AV_WL64(void *p, uint64_t v)
 {
     union { uint64_t v; uint32_t hl[2]; } vv = { v };
 #ifdef XBMC_360
-
+	__storewordbytereverse(vv.hl[1], 0, (void*)(*(uint32_t*)p));
+	__storewordbytereverse(vv.hl[0], 0, (void*)( *((uint32_t*)p+1) ));
 #else
 	__storewordbytereverse(vv.hl[1], 0, (*(uint32_t*)p));
 	__storewordbytereverse(vv.hl[0], 0, ( *((uint32_t*)p+1) ));

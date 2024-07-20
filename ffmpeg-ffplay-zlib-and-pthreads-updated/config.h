@@ -3,7 +3,7 @@
 #define FFMPEG_CONFIG_H
 
 #ifdef _MSC_VER
-#include "msvc-compat.h"
+#include "vcproj/external/cbrt.h"
 #define MSC_STRUCTS
 #endif
 

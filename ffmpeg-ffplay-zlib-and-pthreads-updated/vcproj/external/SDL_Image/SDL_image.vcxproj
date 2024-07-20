@@ -438,7 +438,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>..;..\SDL_image;..\..;graphics\include;..\lpng144;..\vcproj\libzlib\zlib;..\vcproj\libsdl\sdl;..\vcproj\libsdl\SDL\include;..\vcproj\libsdl\SDL\src\video;..\vcproj\libsdl\src\audio;..\vcproj\libsdl\src\cdrom;..\vcproj\libsdl\src\endian;..\vcproj\libsdl\src\events;..\vcproj\libsdl\src\file;..\vcproj\libsdl\src\joystick;..\vcproj\libsdl\src\thread;..\vcproj\libsdl\src\timer;..\vcproj\libsdl\src\thread\xbox;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;..\SDL_image;..\..;graphics\include;..\..\external\lpng144;..\..\external\zlib;..\..\external\SDL\SDL\;..\..\external\SDL\SDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;PNG_SAVE_FORMAT;_XBOX;_LIB;__powerpc__;__BIG_ENDIAN__;LOAD_PNG;LOAD_BMP;XBOX</PreprocessorDefinitions>
       <StringPooling>false</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>

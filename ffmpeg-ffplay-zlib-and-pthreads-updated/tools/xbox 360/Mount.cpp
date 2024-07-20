@@ -61,10 +61,10 @@ int cDrives::Mount( string MountPoint )
 	else return 1;
 }
 
-vector<string> cDrives::mountAll() {
-	vector<string> drives;
+std::vector<string> cDrives::mountAll() {
+	std::vector<string> drives;
 	for (int x = DEVICE_FIXED_START; x < DEVICE_REMOVABLE_END; x++) {
-		string MP ="";
+		std::string MP ="";
 		switch (x) {
 			case DEVICE_CDROM0:
 				MP = "Dvd:";
@@ -117,7 +117,7 @@ int cDrives::DriveMounted(string path)
 {
         WIN32_FIND_DATA findFileData;
         memset(&findFileData,0,sizeof(WIN32_FIND_DATA));
-		string searchcmd = path + "\\*.*";
+		std::string searchcmd = path + "\\*.*";
 
         //debugLog(searchcmd.c_str());
         HANDLE hFind = FindFirstFile(searchcmd.c_str(), &findFileData);

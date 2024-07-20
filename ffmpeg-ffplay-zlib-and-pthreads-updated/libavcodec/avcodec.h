@@ -25,8 +25,11 @@
 #include <windows.h>
 #else
 #include <xtl.h>
+#include <stdint.h>
+#define inline __inline
 #undef memset
 #undef memcpy
+#undef near
 
 #define memset XMemSet
 #define memcpy XMemCpy

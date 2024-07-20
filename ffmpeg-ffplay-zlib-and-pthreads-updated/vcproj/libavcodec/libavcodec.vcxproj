@@ -237,6 +237,24 @@
       <InlineAssemblyOptimization>true</InlineAssemblyOptimization>
     </ClCompile>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
+    <ClCompile>
+      <StructMemberAlignment>16Bytes</StructMemberAlignment>
+      <CompileAs>CompileAsC</CompileAs>
+      <AdditionalIncludeDirectories>..\external;..\external\zlib;..\external\include;..\external\pthreads;..\..</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <PreprocessorDefinitions>NDEBUG;XBOX;_LIB;_XBOX;HAVE_AV_CONFIG_H;MSC_STRUCTS;_CRT_DISABLE_PERFCRIT_LOCKS;_M_PPCBE;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4305</DisableSpecificWarnings>
+      <ForcedIncludeFiles>libavutil/intmath.h;config.h</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libavcodec\4xm.c" />
     <ClCompile Include="..\..\libavcodec\8bps.c" />

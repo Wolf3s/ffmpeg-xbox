@@ -11,13 +11,13 @@ using namespace std;
 
 
 struct FileItem {
-	string path;
+	std::string path;
 	bool isDir;
 };
 
 bool atRoot;
-string CurrentPath;
-vector<string> drives;
+std::string CurrentPath;
+std::vector<string> drives;
 int x = 50;
 int y = 50;
 
@@ -28,7 +28,7 @@ bool driveset = false;
 SDL_Color basicColor = {/*fgR,fgG,fgB,fgA*/200,200,200,0};
 SDL_Color highlighColor = {/*fgR,fgG,fgB,fgA*/0,128,128,0};
 
-vector<FileItem> FullList;
+std::vector<FileItem> FullList;
 
 
 const char *getFileManager() {
@@ -255,7 +255,7 @@ void drawscreen() {
 	
 	int  color = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
 	SDL_FillRect(screen, NULL, color);
-	string header = "Current Path :: " + CurrentPath;
+	std::string header = "Current Path :: " + CurrentPath;
 	writeText(header.c_str(), x, 0, 0);
 	if (atRoot) {
 		for (unsigned int loop = 0; loop < drives.size(); loop++) {
@@ -294,7 +294,7 @@ void GetFileList() {
 	FullList.clear();
 	WIN32_FIND_DATA findFileData;
     memset(&findFileData,0,sizeof(WIN32_FIND_DATA));
-	string searchcmd = CurrentPath + "\\*.*";
+	std::string searchcmd = CurrentPath + "\\*.*";
 
     //debugLog(searchcmd.c_str());
    HANDLE hFind = FindFirstFile(searchcmd.c_str(), &findFileData);

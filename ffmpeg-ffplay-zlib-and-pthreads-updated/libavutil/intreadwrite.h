@@ -91,10 +91,8 @@ typedef union {
 #   include "tomi/intreadwrite.h"
 #elif ARCH_X86
 #   include "x86/intreadwrite.h"
-#elif _XBOX
-#ifdef XBMC_360
+#elif _XBOX_ARCH
 #   include "xbox360/intreadwrite.h"
-#endif
 #endif
 
 #endif /* HAVE_AV_CONFIG_H */

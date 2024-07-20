@@ -18,7 +18,7 @@
 #include <AtgUtil.h>
 #include <xaudio2.h>
 #include <xmedia2.h>
-#include "Tools\xmv.h"
+#include "xmv.h"
 //static const char* filename;
 
 const char* g_strMovieName;// = filename; //"game:\\Media\\Video\\Sample.wmv";

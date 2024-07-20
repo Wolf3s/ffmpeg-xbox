@@ -31,7 +31,7 @@
 #include "bytestream.h"
 
 //#undef NDEBUG
-//#include <assert.h>
+#include <assert.h>
 
 #define BLOCK_TYPE_VLC_BITS 5
 #define ACDC_VLC_BITS 9

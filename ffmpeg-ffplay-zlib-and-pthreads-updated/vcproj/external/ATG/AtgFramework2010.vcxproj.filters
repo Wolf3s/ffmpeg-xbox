@@ -196,7 +196,7 @@
     <ClInclude Include="AtgAnimation.h">
       <Filter>Scene</Filter>
     </ClInclude>
-	<ClInclude Include="AtgMaterials.h">
+    <ClInclude Include="AtgMaterials.h">
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="AtgSceneMesh.h">

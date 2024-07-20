@@ -296,7 +296,7 @@ int XBOX_VideoInit(_THIS, SDL_PixelFormat *vformat)
 		return (0);
 }
 
-const static SDL_Rect
+const static SDL_Rect 
 	RECT_1920x1080 = {0,0,1920,1080},
 	RECT_1280x720 = {0,0,1280,720},
 	RECT_1024x768 = {0,0,1024,768},

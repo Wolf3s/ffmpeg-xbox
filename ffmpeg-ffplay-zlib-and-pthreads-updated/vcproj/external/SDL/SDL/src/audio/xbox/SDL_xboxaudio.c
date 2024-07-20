@@ -213,7 +213,7 @@ static void XboxDX_PlayAudio(_THIS)
 		
 	while (1) {
 				
-		IXAudio2SourceVoice_GetState(mixbuf, &state);
+		IXAudio2SourceVoice_GetState(mixbuf, &state, 0);
 		xa2buffer.Flags = XAUDIO2_END_OF_STREAM;
          if (state.BuffersQueued < (NUM_BUFFERS - 1)) {
             if (state.BuffersQueued == 0) {

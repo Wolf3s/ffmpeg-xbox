@@ -23,10 +23,12 @@
 
 #ifndef _XBOX
 #include <windows.h>
-#elif 0
+#else
 #include <xtl.h>
 #undef memset
 #undef memcpy
+#undef near 
+#define inline __inline
 
 #define memset XMemSet
 #define memcpy XMemCpy

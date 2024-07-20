@@ -31,7 +31,7 @@
 #include <xtl.h>
 #include "os_support.h"
 #endif
-#ifdnef XBMC_360
+#ifndef XBMC_360
 #undef memset
 #undef memcpy
 #endif

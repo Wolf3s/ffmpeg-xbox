@@ -397,7 +397,7 @@
 
 #ifndef PNG_VERSION_INFO_ONLY
 /* Include the compression library's header */
-#include "..\vcproj\external\zlib\zlib.h"
+#include <zlib.h>
 #endif
 
 #if !defined(_XBOX)

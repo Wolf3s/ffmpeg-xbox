@@ -1,9 +1,6 @@
 #undef memset
 #undef memcpy
 
-
-
-
 #include "LaunchData.h"
 #include "Mount.h"
 #include <xtl.h>
@@ -11,7 +8,7 @@
 
 using namespace std;
 
-string retApp;
+std::string retApp;
 
 const char* getLaunchData() {
 	
@@ -22,9 +19,9 @@ const char* getLaunchData() {
 		LaunchInfo* pLaunchData = new LaunchInfo [ dwLaunchDataSize ];
         dwStatus = XGetLaunchData( pLaunchData, dwLaunchDataSize );
 		if (dwStatus == ERROR_SUCCESS) {
-			string tempStr = pLaunchData->filename;
+			std::string tempStr = pLaunchData->filename;
 			retApp = pLaunchData->callingapp;
-			string mountPoint = tempStr.substr(0, tempStr.find("\\"));
+			std::string mountPoint = tempStr.substr(0, tempStr.find("\\"));
 			if (cDrives::Mount(mountPoint))
 				return (const char*)pLaunchData->filename;
 			else return NULL;
@@ -38,7 +35,7 @@ const char* getReturnApp() {
 	if (strcmp(retApp.c_str(), "") != 0) {
 		return retApp.c_str();
 	} else {
-		string current = ExLoadedImageName;
+		std::string current = ExLoadedImageName;
 		retApp = current.substr(current.find_last_of("\\") + 1);
 		return retApp.c_str();
 	}
