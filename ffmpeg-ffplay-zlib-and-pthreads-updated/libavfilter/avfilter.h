@@ -22,6 +22,17 @@
 #ifndef AVFILTER_AVFILTER_H
 #define AVFILTER_AVFILTER_H
 
+#ifndef _XBOX
+#include <windows.h>
+#else
+#include <xtl.h>
+#undef memset
+#undef memcpy
+
+#define memset XMemSet
+#define memcpy XMemCpy
+#endif
+
 #ifdef _MSC_VER
 #include "libavutil/internal.h"
 #define MSC_STRUCTS

@@ -86,10 +86,13 @@ static av_always_inline uint64_t AV_RL64(const void *p)
              : "=&r"(v.hl[1]), "=r"(v.hl[0])
              : "Z"(*(const uint32_t*)p), "Z"(*((const uint32_t*)p+1)));
 	*/
-	
+#ifdef XBMC_360
+	v.hl[1] = __loadwordbytereverse(0,(void*)(*(const uint32_t*)p));
+	v.hl[0] = __loadwordbytereverse(0,(void*)(*(const uint32_t*)p+1));
+#else
 	v.hl[1] = __loadwordbytereverse(0,(*(const uint32_t*)p));
 	v.hl[0] = __loadwordbytereverse(0,(*(const uint32_t*)p+1));
-	
+#endif	
     return v.v;
 }
 
@@ -97,8 +100,12 @@ static av_always_inline uint64_t AV_RL64(const void *p)
 static av_always_inline void AV_WL64(void *p, uint64_t v)
 {
     union { uint64_t v; uint32_t hl[2]; } vv = { v };
+#ifdef XBMC_360
+
+#else
 	__storewordbytereverse(vv.hl[1], 0, (*(uint32_t*)p));
 	__storewordbytereverse(vv.hl[0], 0, ( *((uint32_t*)p+1) ));
+#endif
 	/*
     __asm__ ("stwbrx  %2, %y0  \n\t"
              "stwbrx  %3, %y1  \n\t"
