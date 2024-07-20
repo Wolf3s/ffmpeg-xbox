@@ -21,6 +21,13 @@
 #ifndef AVFORMAT_AVFORMAT_H
 #define AVFORMAT_AVFORMAT_H
 
+#ifndef _XBOX
+#include <windows.h>
+#else
+#include <xtl.h>
+#undef memset
+#undef memcpy
+#endif
 
 /**
  * I return the LIBAVFORMAT_VERSION_INT constant.  You got
@@ -46,7 +53,6 @@ const char *avformat_license(void);
 #include "libavformat/version.h"
 
 struct AVFormatContext;
-
 
 /*
  * Public Metadata API.

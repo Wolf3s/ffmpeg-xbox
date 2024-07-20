@@ -26,6 +26,10 @@
 #include "libavcodec/mpeg4audio.h"
 #include "avformat.h"
 #include "adts.h"
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 
 int ff_adts_decode_extradata(AVFormatContext *s, ADTSContext *adts, uint8_t *buf, int size)
 {

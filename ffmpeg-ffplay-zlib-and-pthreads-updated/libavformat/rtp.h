@@ -22,7 +22,10 @@
 #define AVFORMAT_RTP_H
 
 #include "libavcodec/avcodec.h"
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 /**
  * Return the payload type for a given codec.
  *

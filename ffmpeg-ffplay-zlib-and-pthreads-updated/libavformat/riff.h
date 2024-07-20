@@ -31,7 +31,10 @@
 #include "libavcodec/avcodec.h"
 #include "avio.h"
 #include "internal.h"
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 int64_t ff_start_tag(AVIOContext *pb, const char *tag);
 void ff_end_tag(AVIOContext *pb, int64_t start);
 

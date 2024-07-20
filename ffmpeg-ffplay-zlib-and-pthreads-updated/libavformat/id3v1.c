@@ -21,7 +21,10 @@
 
 #include "id3v1.h"
 #include "libavcodec/avcodec.h"
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 const char * const ff_id3v1_genre_str[ID3v1_GENRE_MAX + 1] = {
 #ifndef MSC_STRUCTS
       [0] = "Blues",

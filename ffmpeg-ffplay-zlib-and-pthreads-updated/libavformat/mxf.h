@@ -23,7 +23,10 @@
 
 #include "libavcodec/avcodec.h"
 #include <stdint.h>
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 typedef uint8_t UID[16];
 
 enum MXFMetadataSetType {

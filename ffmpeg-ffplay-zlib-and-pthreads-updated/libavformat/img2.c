@@ -31,7 +31,10 @@
 #include <xtl.h>
 #include "os_support.h"
 #endif
-
+#ifdnef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 typedef struct {
     int img_first;
     int img_last;

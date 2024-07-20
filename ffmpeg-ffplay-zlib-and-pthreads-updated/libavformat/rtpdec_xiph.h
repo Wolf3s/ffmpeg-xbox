@@ -26,7 +26,10 @@
 
 #include "libavcodec/avcodec.h"
 #include "rtpdec.h"
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 /**
  * Theora RTP callbacks.
  */

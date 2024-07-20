@@ -363,8 +363,10 @@ void av_register_all(void)
     REGISTER_DEMUXER  (NSV, nsv);
 */
     //REGISTER_MUXER    (NULL, null);
+#ifdef XBMC_360
     REGISTER_MUXDEMUX (NUT, nut);
     REGISTER_DEMUXER  (NUV, nuv);
+#endif
     REGISTER_MUXDEMUX (OGG, ogg);
     REGISTER_DEMUXER  (OMA, oma);
 	

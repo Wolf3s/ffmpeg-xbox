@@ -24,6 +24,10 @@
 
 #include "libavcodec/avcodec.h"
 #include "metadata.h"
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 
 /* EBML version supported */
 #define EBML_VERSION 1

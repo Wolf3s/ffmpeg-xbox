@@ -100,8 +100,10 @@ int poll(struct pollfd *fds, nfds_t numfds, int timeout);
 #  define usleep(t)    Sleep((t) / 1000)
 #  define lseek(f,p,w) _lseeki64((f), (p), (w))
 #endif
-
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 
 
 #endif /* AVFORMAT_OS_SUPPORT_H */

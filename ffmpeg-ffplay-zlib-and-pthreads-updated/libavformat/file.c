@@ -33,7 +33,10 @@
 #include "os_support.h"
 #include "url.h"
 
-
+#ifndef XBMC_360
+#undef memset
+#undef memcpy
+#endif
 /* standard file protocol */
 
 static int file_read(URLContext *h, unsigned char *buf, int size)
