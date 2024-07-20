@@ -35,7 +35,9 @@
 #include "unary.h"
 #include "simple_idct.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 /***********************************************************************/

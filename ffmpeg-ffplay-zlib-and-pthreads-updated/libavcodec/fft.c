@@ -120,9 +120,11 @@ av_cold int ff_fft_init(FFTContext *s, int nbits, int inverse)
 #endif
 
 #if CONFIG_FFT_FLOAT
+#ifdef XBMC_360
     if (ARCH_ARM)     ff_fft_init_arm(s);
     if (HAVE_ALTIVEC) ff_fft_init_altivec(s);
-    if (HAVE_MMX)     ff_fft_init_mmx(s);
+    if (HAVE_MMX)     ff_fft_init_mmx(s); 
+#endif
     if (CONFIG_MDCT)  s->mdct_calcw = s->mdct_calc;
 #else
     if (CONFIG_MDCT)  s->mdct_calcw = ff_mdct_calcw_c;

@@ -36,7 +36,9 @@
 #include "svq1.h"
 #include "svq1enc_cb.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 

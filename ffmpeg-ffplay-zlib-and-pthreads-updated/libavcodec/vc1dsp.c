@@ -749,9 +749,10 @@ av_cold void ff_vc1dsp_init(VC1DSPContext* dsp) {
 
     dsp->put_no_rnd_vc1_chroma_pixels_tab[0]= put_no_rnd_vc1_chroma_mc8_c;
     dsp->avg_no_rnd_vc1_chroma_pixels_tab[0]= avg_no_rnd_vc1_chroma_mc8_c;
-
+#ifdef XBMC_360
     if (HAVE_ALTIVEC)
         ff_vc1dsp_init_altivec(dsp);
     if (HAVE_MMX)
         ff_vc1dsp_init_mmx(dsp);
+#endif
 }

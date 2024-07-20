@@ -24,7 +24,9 @@
 #include "wma.h"
 #include "wmadata.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 /* XXX: use same run/length optimization as mpeg decoders */

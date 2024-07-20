@@ -61,10 +61,11 @@ av_cold void ff_fmt_convert_init(FmtConvertContext *c, AVCodecContext *avctx)
     c->int32_to_float_fmul_scalar = int32_to_float_fmul_scalar_c;
     c->float_to_int16             = float_to_int16_c;
     c->float_to_int16_interleave  = float_to_int16_interleave_c;
-
+#ifdef XBMC_360
     if (ARCH_ARM) ff_fmt_convert_init_arm(c, avctx);
     if (HAVE_ALTIVEC) ff_fmt_convert_init_altivec(c, avctx);
     if (HAVE_MMX) ff_fmt_convert_init_x86(c, avctx);
+#endif
 }
 
 /* ffdshow custom code */

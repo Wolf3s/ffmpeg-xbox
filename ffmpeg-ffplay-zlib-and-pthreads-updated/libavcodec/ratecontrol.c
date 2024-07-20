@@ -32,7 +32,9 @@
 #include "mpegvideo.h"
 #include "libavutil/eval.h"
 
+#ifdef XBMC_360
 #undef NDEBUG // Always check asserts, the speed effect is far too small to disable them.
+#endif
 #include <assert.h>
 
 #ifndef M_E

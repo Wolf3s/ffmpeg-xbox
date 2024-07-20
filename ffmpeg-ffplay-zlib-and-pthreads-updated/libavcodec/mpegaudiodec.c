@@ -328,7 +328,9 @@ static av_cold int decode_init(AVCodecContext * avctx)
 #if CONFIG_FLOAT
     ff_dct_init(&s->dct, 5, DCT_II);
 #endif
+#ifdef XBMC_360
     if (HAVE_ALTIVEC && CONFIG_FLOAT) ff_mpegaudiodec_init_altivec(s);
+#endif
 
     avctx->sample_fmt= OUT_FMT;
     s->error_recognition= avctx->error_recognition;
@@ -1288,7 +1290,11 @@ static int huffman_decode(MPADecodeContext *s, GranuleDef *g,
 
         /* read huffcode and compute each couple */
         for(;j>0;j--) {
+#ifdef XBMC_360
             int exponent, x, y;
+#else
+            int exponent, x, y = 0;
+#endif
             int v;
             int pos= get_bits_count(&s->gb);
 

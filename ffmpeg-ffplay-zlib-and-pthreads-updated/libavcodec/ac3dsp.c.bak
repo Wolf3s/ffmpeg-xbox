@@ -181,10 +181,9 @@ av_cold void ff_ac3dsp_init(AC3DSPContext *c, int bit_exact)
     c->bit_alloc_calc_bap = ac3_bit_alloc_calc_bap_c;
     c->compute_mantissa_size = ac3_compute_mantissa_size_c;
     c->extract_exponents = ac3_extract_exponents_c;
-#ifdef XBMC_360
+
     if (ARCH_ARM)
         ff_ac3dsp_init_arm(c, bit_exact);
     if (HAVE_MMX)
-        ff_ac3dsp_init_x86(c, bit_exact); 
-#endif
+        ff_ac3dsp_init_x86(c, bit_exact);
 }

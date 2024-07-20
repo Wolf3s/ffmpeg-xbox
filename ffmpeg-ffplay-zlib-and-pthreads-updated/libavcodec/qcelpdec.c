@@ -41,7 +41,9 @@
 #include "acelp_vectors.h"
 #include "lsp.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 typedef enum

@@ -41,7 +41,9 @@
 
 #include "svq1.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 extern const uint8_t mvtab[33][2];

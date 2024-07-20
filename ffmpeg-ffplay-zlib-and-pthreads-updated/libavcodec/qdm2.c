@@ -44,7 +44,9 @@
 #include "qdm2data.h"
 #include "qdm2_tablegen.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 

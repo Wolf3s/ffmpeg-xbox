@@ -22,7 +22,9 @@
 #include "avcodec.h"
 #include "wma.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 

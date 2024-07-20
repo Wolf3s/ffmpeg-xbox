@@ -20,8 +20,9 @@
  */
 #include "avcodec.h"
 #include "bytestream.h"
-
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 // ncnt is the nibble counter

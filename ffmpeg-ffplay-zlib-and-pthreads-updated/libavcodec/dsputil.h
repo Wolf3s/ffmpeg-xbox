@@ -205,8 +205,7 @@ typedef struct ScanTable{
 #if ARCH_PPC
     /** Used by dct_quantize_altivec to find last-non-zero */
     DECLARE_ALIGNED(16, uint8_t, inverse)[64];
-#endif
-#ifdef _XBOX
+#elif _XBOX
 	/** Used by dct_quantize_altivec to find last-non-zero */
     DECLARE_ALIGNED(16, uint8_t, inverse)[64];
 #endif

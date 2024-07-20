@@ -21,6 +21,17 @@
 #ifndef AVCODEC_AVCODEC_H
 #define AVCODEC_AVCODEC_H
 
+#ifndef _XBOX
+#include <windows.h>
+#else
+#include <xtl.h>
+#undef memset
+#undef memcpy
+
+#define memset XMemSet
+#define memcpy XMemCpy
+#endif
+
 #if CONFIG_SMALL
 #   define NULL_IF_CONFIG_SMALL(x) NULL
 #else

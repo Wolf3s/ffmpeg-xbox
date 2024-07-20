@@ -107,6 +107,8 @@ void ff_h264dsp_init(H264DSPContext *c, const int bit_depth)
 #endif
 #ifdef _XBOX
 	ff_h264dsp_init_luma_vmx(c);
+#ifdef XBMC_360
 	ff_h264_idct_init_ppc(c);
+#endif
 #endif
 }

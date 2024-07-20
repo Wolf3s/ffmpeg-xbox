@@ -1149,6 +1149,9 @@ void avcodec_default_free_buffers(AVCodecContext *s){
     av_freep(&s->internal_buffer);
 
     s->internal_buffer_count=0;
+#ifndef XBMC_360
+	ptw32_processTerminate();
+#endif
 }
 
 char av_get_pict_type_char(int pict_type){

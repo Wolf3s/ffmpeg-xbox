@@ -3237,7 +3237,7 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
         }
     }
 
-
+#ifdef XBMC_360
     if (HAVE_MMX)        dsputil_init_mmx   (c, avctx);
     if (ARCH_ARM)        dsputil_init_arm   (c, avctx);
     if (CONFIG_MLIB)     dsputil_init_mlib  (c, avctx);
@@ -3246,7 +3246,8 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     if (ARCH_PPC)        dsputil_init_ppc   (c, avctx);
     if (HAVE_MMI)        dsputil_init_mmi   (c, avctx);
     if (ARCH_SH4)        dsputil_init_sh4   (c, avctx);
-    if (ARCH_BFIN)       dsputil_init_bfin  (c, avctx);
+    if (ARCH_BFIN)       dsputil_init_bfin  (c, avctx); 
+#endif
 #ifdef _XBOX
 	dsputil_init_ppc   (c, avctx);
 #endif

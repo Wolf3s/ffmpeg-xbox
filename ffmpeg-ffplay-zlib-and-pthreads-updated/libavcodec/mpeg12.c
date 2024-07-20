@@ -301,12 +301,14 @@ static int mpeg_decode_mb(MpegEncContext *s,
             memset(s->last_mv, 0, sizeof(s->last_mv)); /* reset mv prediction */
         s->mb_intra = 1;
         //if 1, we memcpy blocks in xvmcvideo
+#ifdef XBMC_360
         if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration > 1){
             ff_xvmc_pack_pblocks(s,-1);//inter are always full blocks
             if(s->swap_uv){
                 exchange_uv(s);
             }
         }
+#endif
 
         if (s->codec_id == CODEC_ID_MPEG2VIDEO) {
             if(s->flags2 & CODEC_FLAG2_FAST){
@@ -522,13 +524,14 @@ static int mpeg_decode_mb(MpegEncContext *s,
             }
 
             //if 1, we memcpy blocks in xvmcvideo
+#ifdef XBMC_360
             if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration > 1){
                 ff_xvmc_pack_pblocks(s,cbp);
                 if(s->swap_uv){
                     exchange_uv(s);
                 }
             }
-
+#endif			
             if (s->codec_id == CODEC_ID_MPEG2VIDEO) {
                 if(s->flags2 & CODEC_FLAG2_FAST){
                     for(i=0;i<6;i++) {
@@ -1710,10 +1713,11 @@ static int mpeg_field_start(MpegEncContext *s, const uint8_t *buf, int buf_size)
 
 // MPV_frame_start will call this function too,
 // but we need to call it on every field
+#ifdef XBMC_360
     if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration)
         if(ff_xvmc_field_start(s,avctx) < 0)
             return -1;
-
+#endif
     return 0;
 }
 
@@ -1814,8 +1818,10 @@ static int mpeg_decode_slice(Mpeg1Context *s1, int mb_y,
 
     for(;;) {
         //If 1, we memcpy blocks in xvmcvideo.
+#ifdef XBMC_360		
         if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration > 1)
             ff_xvmc_init_block(s);//set s->block
+#endif
 
         if(mpeg_decode_mb(s, s->block) < 0)
             return -1;
@@ -2001,10 +2007,10 @@ static int slice_end(AVCodecContext *avctx, AVFrame *pict)
         if (s->avctx->hwaccel->end_frame(s->avctx) < 0)
             av_log(avctx, AV_LOG_ERROR, "hardware accelerator failed to decode picture\n");
     }
-
+#ifdef XBMC_360
     if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration)
         ff_xvmc_field_end(s);
-
+#endif
     /* end of slice reached */
     if (/*s->mb_y<<field_pic == s->mb_height &&*/ !s->first_field) {
         /* end of image */
@@ -2363,8 +2369,10 @@ static int decode_chunks(AVCodecContext *avctx,
                         s2->error_count += s2->thread_context[i]->error_count;
                 }
 
+#ifdef XBMC_360
                 if (CONFIG_VDPAU && uses_vdpau(avctx))
                     ff_vdpau_mpeg_picture_complete(s2, buf, buf_size, s->slice_count);
+#endif					
 
                 if (slice_end(avctx, picture)) {
                     if(s2->last_picture_ptr || s2->low_delay) //FIXME merge with the stuff in mpeg_decode_slice

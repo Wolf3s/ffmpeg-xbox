@@ -39,7 +39,9 @@
 #include "mathops.h"
 #include "vdpau_internal.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
 #include <assert.h>
 
 #define MB_INTRA_VLC_BITS 9
@@ -3539,7 +3541,7 @@ static int vc1_decode_frame(AVCodecContext *avctx,
 
     s->me.qpel_put= s->dsp.put_qpel_pixels_tab;
     s->me.qpel_avg= s->dsp.avg_qpel_pixels_tab;
-
+#ifdef XBMC_360
     if ((CONFIG_VC1_VDPAU_DECODER)
         &&s->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU)
         ff_vdpau_vc1_decode_picture(s, buf_start, (buf + buf_size) - buf_start);
@@ -3561,6 +3563,31 @@ static int vc1_decode_frame(AVCodecContext *avctx,
                 i == n_slices ? s->mb_height : FFMIN(s->mb_height, slices[i].mby_start));
             if (i != n_slices) s->gb = slices[i].gb;
         }
+#else
+#if (CONFIG_VC1_VDPAU_DECODER)
+	if (s->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU)
+        ff_vdpau_vc1_decode_picture(s, buf_start, (buf + buf_size) - buf_start);
+#else
+	if (avctx->hwaccel) {
+        if (avctx->hwaccel->start_frame(avctx, buf, buf_size) < 0)
+            goto err;
+        if (avctx->hwaccel->decode_slice(avctx, buf_start, (buf + buf_size) - buf_start) < 0)
+            goto err;
+        if (avctx->hwaccel->end_frame(avctx) < 0)
+            goto err;
+    } else {
+        ff_er_frame_start(s);
+
+        v->bits = buf_size * 8;
+        for (i = 0; i <= n_slices; i++) {
+            if (i && get_bits1(&s->gb))
+                vc1_parse_frame_header_adv(v, &s->gb);
+            vc1_decode_blocks(v, i == 0 ? 0 : FFMAX(0, slices[i-1].mby_start),
+                i == n_slices ? s->mb_height : FFMIN(s->mb_height, slices[i].mby_start));
+            if (i != n_slices) s->gb = slices[i].gb;
+        }
+#endif
+#endif
 //av_log(s->avctx, AV_LOG_INFO, "Consumed %i/%i bits\n", get_bits_count(&s->gb), s->gb.size_in_bits);
 //  if(get_bits_count(&s->gb) > buf_size * 8)
 //      return -1;

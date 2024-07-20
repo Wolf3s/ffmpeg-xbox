@@ -36,7 +36,10 @@
 #include "mathops.h"
 #include "mpegvideo.h"
 
+#ifdef XBMC_360
 #undef NDEBUG
+#endif
+
 #include <assert.h>
 
 #define SQ(a) ((a)*(a))

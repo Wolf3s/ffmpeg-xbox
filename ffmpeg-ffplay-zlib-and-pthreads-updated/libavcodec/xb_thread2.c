@@ -29,7 +29,51 @@
  * @see doc/multithreading.txt
  */
 
-#include <pthread.h>
+/* Thread_emulation.h */
+/* Author: Johnson M. Hart */
+/* Emulate the Pthreads model for the Win32 platform */
+/* The emulation is not complete, but it does provide a subset */
+/* required for a first project */
+/* Source: http://world.std.com/~jmhart/opensource.htm */
+/* The emulation is not complete, but it does provide a subset */
+/* that will work with many well-behaved programs */
+/* IF YOU ARE REALLY SERIOUS ABOUT THIS, USE THE OPEN SOURCE */
+/* PTHREAD LIBRARY. YOU'LL FIND IT ON THE RED HAT SITE */
+
+#ifndef _THREAD_EMULATION
+#  define _THREAD_EMULATION
+
+/* Thread management macros */
+#    define THREAD_FUNCTION_PROTO THREAD_FUNCTION_RETURN (__stdcall *) (void *)
+#    define THREAD_FUNCTION_RETURN unsigned int
+#    define THREAD_SPECIFIC_INDEX DWORD
+#    define pthread_t HANDLE
+#    define pthread_attr_t DWORD
+#    define pthread_create(thhandle, attr, thfunc, tharg) ((int) ((*thhandle = (HANDLE) _beginthreadex(NULL, 0, (THREAD_FUNCTION_PROTO) thfunc, tharg, 0, NULL)) == NULL))
+#    define pthread_join(thread, result) ((WaitForSingleObject((thread), INFINITE) != WAIT_OBJECT_0) || !CloseHandle(thread))
+#    define pthread_detach(thread) { if (((void *) thread) != NULL) { CloseHandle((void *) thread); }}
+#    define thread_sleep(nms) Sleep(nms)
+#    define pthread_cancel(thread) TerminateThread(thread, 0)
+#    define ts_key_create(ts_key, destructor) {ts_key = TlsAlloc();}
+#    define pthread_getspecific(ts_key) TlsGetValue(ts_key)
+#    define pthread_setspecific(ts_key, value) TlsSetValue(ts_key, (void *)value)
+#    define pthread_self() GetCurrentThreadId()
+
+#    define pthread_mutex_t HANDLE
+#    define pthread_cond_t HANDLE
+#    define pthread_mutex_lock(pobject) WaitForSingleObject(*pobject, INFINITE)
+#    define pthread_mutex_unlock(pobject) ReleaseMutex(*pobject)
+#    define pthread_mutex_init(pobject,pattr) (*pobject=CreateMutex(NULL, FALSE, NULL))
+#    define pthread_cond_init(pobject,pattr) (*pobject=CreateEvent(NULL, FALSE, FALSE, NULL))
+#    define pthread_mutex_destroy(pobject) CloseHandle(*pobject)
+#    define pthread_cond_destroy(pobject) CloseHandle(*pobject)
+#    define pthread_cond_wait(pcv,pmutex) { SignalObjectAndWait(*pmutex, *pcv, INFINITE, FALSE); WaitForSingleObject(*pmutex, INFINITE); }
+#    define pthread_cond_signal(pcv) SetEvent(*pcv)
+
+#endif
+#define pthread_cond_broadcast(pcv)	 PulseEvent(*pcv)
+
+//#include <pthread.h>
 #include <xtl.h>
 #include "avcodec.h"
 #include "thread.h"
@@ -37,14 +81,8 @@
 typedef int (action_func)(AVCodecContext *c, void *arg);
 typedef int (action_func2)(AVCodecContext *c, void *arg, int jobnr, int threadnr);
 
-#ifdef XBMC_360
 //#define hw_thread(x) ((x/2)+1)
 #define hw_thread(x) (x+1)
-#else
-int hardwareThread[4] = {3,5,2,1};
-int loopy = 0;
-int loopmax = 4;
-#endif
 
 typedef struct ThreadContext {
     pthread_t *workers;
@@ -258,9 +296,6 @@ static int thread_init(AVCodecContext *avctx)
     c->job_count = 0;
     c->job_size = 0;
     c->done = 0;
-#ifndef XBMC_360
-	ptw32_processInitialize();
-#endif
     pthread_cond_init(&c->current_job_cond, NULL);
     pthread_cond_init(&c->last_job_cond, NULL);
     pthread_mutex_init(&c->current_job_lock, NULL);
@@ -273,20 +308,10 @@ static int thread_init(AVCodecContext *avctx)
            return -1;
         }
 		//Set it to Hw Thread
-		hThread = pthread_getw32threadhandle_np(c->workers[i]);
-		SuspendThread(hThread);
-#ifdef XBMC_360
-		XSetThreadProcessor(hThread, hw_thread(i));
-#else
-		XSetThreadProcessor(hThread, hardwareThread[loopy]);
-		SetThreadPriority(hThread, THREAD_PRIORITY_BELOW_NORMAL); //THREAD_PRIORITY_TIME_CRITICAL);	
-#endif
-		ResumeThread(hThread);
-#ifndef XBMC_360
-		loopy++;
-		if (loopy == loopmax)
-			loopy = 0;
-#endif
+		//hThread = pthread_getw32threadhandle_np(c->workers[i]);
+		//SuspendThread(hThread);
+		//XSetThreadProcessor(hThread, hw_thread(i));
+		//ResumeThread(hThread);
     }
 
     avcodec_thread_park_workers(c, thread_count);
@@ -400,11 +425,7 @@ static int update_context_from_thread(AVCodecContext *dst, AVCodecContext *src, 
  */
 static void update_context_from_user(AVCodecContext *dst, AVCodecContext *src)
 {
-#ifdef XBMC_360
 #define copy_fields(s, e) XMemCpy(&dst->s, &src->s, (char*)&dst->e - (char*)&dst->s);
-#else
-#define copy_fields(s, e) memcpy(&dst->s, &src->s, (char*)&dst->e - (char*)&dst->s);
-#endif
     dst->flags          = src->flags;
 
     dst->draw_horiz_band= src->draw_horiz_band;
@@ -486,13 +507,9 @@ static int submit_packet(PerThreadContext *p, AVPacket *avpkt)
     av_fast_malloc(&buf, &p->allocated_buf_size, avpkt->size + FF_INPUT_BUFFER_PADDING_SIZE);
     p->avpkt = *avpkt;
     p->avpkt.data = buf;
-#ifdef XBMC_360
     XMemCpy(buf, avpkt->data, avpkt->size);
     XMemSet(buf + avpkt->size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
-#else
-    memcpy(buf, avpkt->data, avpkt->size);
-    memset(buf + avpkt->size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
-#endif
+
     p->state = STATE_SETTING_UP;
     pthread_cond_signal(&p->input_cond);
     pthread_mutex_unlock(&p->mutex);
@@ -721,6 +738,7 @@ static int frame_thread_init(AVCodecContext *avctx)
     FrameThreadContext *fctx;
     int i, err = 0;
 	HANDLE hThread;
+
     if (thread_count <= 1) {
         avctx->active_thread_type = 0;
         return 0;
@@ -759,11 +777,8 @@ static int frame_thread_init(AVCodecContext *avctx)
         } else {
             copy->is_copy   = 1;
             copy->priv_data = av_malloc(codec->priv_data_size);
-#ifdef XBMC_360
             XMemCpy(copy->priv_data, src->priv_data, codec->priv_data_size);
-#else
-            memcpy(copy->priv_data, src->priv_data, codec->priv_data_size);
-#endif
+
             if (codec->init_thread_copy)
                 err = codec->init_thread_copy(copy);
         }
@@ -773,19 +788,10 @@ static int frame_thread_init(AVCodecContext *avctx)
         pthread_create(&p->thread, NULL, frame_worker_thread, p);
 
 		//Set it to Hw Thread
-		hThread = pthread_getw32threadhandle_np(p->thread);
-		SuspendThread(hThread);
-#ifdef XBMC_360
-		XSetThreadProcessor(hThread, hw_thread(i));
-		SetThreadPriority(hThread, THREAD_PRIORITY_HIGHEST);
-#else
-		XSetThreadProcessor(hThread, hardwareThread[loopy]);
-		SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL); //THREAD_PRIORITY_TIME_CRITICAL);
-#endif
-		ResumeThread(hThread);
-		loopy++;
-		if (loopy == loopmax)
-			loopy = 0;
+		SuspendThread(p->thread);
+		XSetThreadProcessor(p->thread, hw_thread(i));
+		SetThreadPriority(p->thread, THREAD_PRIORITY_NORMAL);
+		ResumeThread(p->thread);
     }
 
     return 0;
@@ -909,11 +915,7 @@ void ff_thread_release_buffer(AVCodecContext *avctx, AVFrame *f)
                                     f, f->owner->internal_buffer_count);
 
     p->released_buffers[p->num_released_buffers++] = *f;
-#ifdef XBMC_360
     XMemSet(f->data, 0, sizeof(f->data));
-#else
-    memset(f->data, 0, sizeof(f->data));
-#endif
 }
 
 /**
