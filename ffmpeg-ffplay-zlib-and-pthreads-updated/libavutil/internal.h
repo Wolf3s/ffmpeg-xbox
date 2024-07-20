@@ -119,6 +119,7 @@
 #endif
 
 /* avoid usage of dangerous/inappropriate system functions */
+#ifdef XBMC_360
 #undef  malloc
 #define malloc please_use_av_malloc
 #undef  free
@@ -127,23 +128,28 @@
 #define realloc please_use_av_realloc
 #undef  time
 #define time time_is_forbidden_due_to_security_issues
+#endif
 #undef  rand
 #define rand rand_is_forbidden_due_to_state_trashing_use_av_lfg_get
 #undef  srand
 #define srand srand_is_forbidden_due_to_state_trashing_use_av_lfg_init
 #undef  random
 #define random random_is_forbidden_due_to_state_trashing_use_av_lfg_get
+#ifdef XBMC_360
 #undef  sprintf
 #define sprintf sprintf_is_forbidden_due_to_security_issues_use_snprintf
+#endif
 #undef  strcat
 #define strcat strcat_is_forbidden_due_to_security_issues_use_av_strlcat
 #undef  exit
 #define exit exit_is_forbidden
 #ifndef LIBAVFORMAT_BUILD
+#ifdef XBMC_360
 #undef  printf
 #define printf please_use_av_log_instead_of_printf
 #undef  fprintf
 #define fprintf please_use_av_log_instead_of_fprintf
+#endif
 #undef  puts
 #define puts please_use_av_log_instead_of_puts
 #undef  perror

@@ -42,8 +42,11 @@ static inline uint64_t read_time(void)
 	: "cc");
 	*/
 	//return (((uint64_t)tbu)<<32) | (uint64_t)tbl;
+#ifdef XBMC_360
 	LARGE_INTEGER TicksPerSecond;
-
+#else
+	uint64_t TicksPerSecond;
+#endif
 	QueryPerformanceFrequency( &TicksPerSecond );
 
 	return TicksPerSecond;

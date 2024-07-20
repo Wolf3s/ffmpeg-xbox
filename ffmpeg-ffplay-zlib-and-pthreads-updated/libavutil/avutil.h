@@ -21,6 +21,17 @@
 #ifndef AVUTIL_AVUTIL_H
 #define AVUTIL_AVUTIL_H
 
+#ifndef _XBOX
+#include <windows.h>
+#elif 0
+#include <xtl.h>
+#undef memset
+#undef memcpy
+
+#define memset XMemSet
+#define memcpy XMemCpy
+#endif
+
 /**
  * @file
  * external API header

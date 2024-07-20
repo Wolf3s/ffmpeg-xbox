@@ -92,7 +92,9 @@ typedef union {
 #elif ARCH_X86
 #   include "x86/intreadwrite.h"
 #elif _XBOX
+#ifdef XBMC_360
 #   include "xbox360/intreadwrite.h"
+#endif
 #endif
 
 #endif /* HAVE_AV_CONFIG_H */

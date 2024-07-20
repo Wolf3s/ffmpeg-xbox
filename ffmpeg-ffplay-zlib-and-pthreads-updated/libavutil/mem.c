@@ -37,9 +37,12 @@
 #include "mem.h"
 
 /* here we can use OS-dependent allocation functions */
+
+#ifdef XBMC_360
 #undef free
 #undef malloc
 #undef realloc
+#endif
 
 #ifdef MALLOC_PREFIX
 
@@ -73,17 +76,29 @@ void *av_malloc(FF_INTERNAL_MEM_TYPE size)
         return NULL;
 
 #if CONFIG_MEMALIGN_HACK
+#ifdef XBMC_360
     ptr = malloc(size+16);
+#else
+    ptr = malloc(size+32);
+#endif
     if(!ptr)
         return ptr;
-    diff= ((-(long)ptr - 1)&15) + 1;
+#ifdef XBMC_360
+	diff= ((-(long)ptr - 1)&15) + 1;
+#else
+    diff= ((-(long)ptr - 1)&31) + 1;
+#endif
     ptr = (char*)ptr + diff;
     ((char*)ptr)[-1]= diff;
 #elif HAVE_POSIX_MEMALIGN
     if (posix_memalign(&ptr,16,size))
         ptr = NULL;
 #elif HAVE_MEMALIGN
-    ptr = memalign(16,size);
+#ifdef XBMC_360
+	ptr = memalign(16,size);
+#else
+    ptr = memalign(64,size);
+#endif
     /* Why 64?
        Indeed, we should align it:
          on 4 for 386

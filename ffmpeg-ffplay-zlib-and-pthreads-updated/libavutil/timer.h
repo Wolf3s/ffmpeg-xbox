@@ -34,6 +34,8 @@
 #   include "bfin/timer.h"
 #elif ARCH_PPC
 #   include "ppc/timer.h"
+#elif _XBOX
+#   include "xbox360/timer.h"
 #elif ARCH_X86
 #   include "x86/timer.h"
 #endif

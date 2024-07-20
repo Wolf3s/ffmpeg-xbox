@@ -28,13 +28,33 @@
 #define av_bswap16 av_bswap16
 static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 {
-	return  __loadshortbytereverse(0,x);
+	//return _byteswap_ushort(x);
+#ifdef XBMC_360
+		return  __loadshortbytereverse(0,x);
+#else
+		return _byteswap_ushort(x);
+#endif
 }
 
 #define av_bswap32 av_bswap32
 static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 {
-	return __loadwordbytereverse(0,x);
+	//return __loadwordbytereverse(0,x);
+#ifdef XBMC_360
+		return __loadwordbytereverse(0,x);
+#else
+		return _byteswap_ulong(x);
+#endif
+}
+#define av_bswap64 av_bswap64
+static av_always_inline av_const uint64_t av_bswap64(uint64_t x)
+{
+	//return __loadwordbytereverse(0,x);
+#ifdef XBMC_360
+		return __loaddwordbytereverse(0,x);
+#else
+		return _byteswap_uint64(x);
+#endif
 }
 
 #endif

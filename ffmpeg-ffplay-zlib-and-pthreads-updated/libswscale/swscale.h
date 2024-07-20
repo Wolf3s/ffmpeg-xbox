@@ -21,6 +21,17 @@
 #ifndef SWSCALE_SWSCALE_H
 #define SWSCALE_SWSCALE_H
 
+#ifndef _XBOX
+#include <windows.h>
+#else
+//#include <xtl.h>
+#undef memset
+#undef memcpy
+
+#define memset XMemSet
+#define memcpy XMemCpy
+#endif
+
 /**
  * @file
  * @brief

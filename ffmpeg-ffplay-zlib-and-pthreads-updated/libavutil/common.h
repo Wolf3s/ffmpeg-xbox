@@ -47,7 +47,7 @@
 #   define AV_NE(be, le) (le)
 #endif
 
-#ifndef UINT64_C //ANDRÉ: Added this as xbox supports stdint.h on his latest version.
+#ifndef UINT64_C //ANDRï¿½: Added this as xbox supports stdint.h on his latest version.
 #define UINT64_C(val) val##ui64 //MARTY
 #endif
 
@@ -186,11 +186,17 @@ static av_always_inline av_const int16_t av_clip_int16_c(int a)
  */
 static av_always_inline av_const int32_t av_clipl_int32_c(int64_t a)
 {
+#ifdef XBMC_360
 	if ((a+0x80000000u) & ~UINT64_C(0xFFFFFFFF))
 	return (int32_t)((a>>63) ^ 0x7FFFFFFF);
 	else
 	return (int32_t)a;
+#else
+    if ((a+0x80000000u) & ~UINT64_C(0xFFFFFFFF)) return (a>>63) ^ 0x7FFFFFFF;
+    else                                         return a;
+#endif
 }
+
 /**
  * Clip a float value into the amin-amax range.
  * @param a value to clip
