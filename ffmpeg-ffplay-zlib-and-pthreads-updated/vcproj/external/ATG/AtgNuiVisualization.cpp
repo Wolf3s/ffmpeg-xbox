@@ -199,6 +199,11 @@ struct VideoFeedVertex
     FLOAT vTexCoords[ 2 ];
 };
 
+struct DepthPreviewVertex
+{
+    FLOAT x, y;
+    FLOAT u, v;
+};
 
 //--------------------------------------------------------------------------------------
 // Name: NUI_VISUALIZATION_SKELETON_RENDER_INFO::SplatTrackedColor
@@ -249,7 +254,12 @@ VOID NUI_VISUALIZATION_SKELETON_RENDER_INFO::SplatInferredColor( D3DCOLOR inferr
 //--------------------------------------------------------------------------------------
 NuiVisualization::NuiVisualization()
 :m_bIsInitialized( FALSE ),
- m_colorIsNew( FALSE ),
+ m_pSmoothDepthTexture( NULL ),
+ m_pSmoothDepthTextureSwap( NULL ),
+ m_pNuiDepthTexture( NULL ),
+ m_pDepthPreviewPS( NULL ),
+ m_pDepthPreviewSmoothingVS( NULL ),
+ m_bColorIsNew( FALSE ),
  m_colorDisplaying( 0 ),
  m_depthDisplaying( 0 ),
  m_colorImageResolution( NUI_IMAGE_RESOLUTION_640x480 ),
@@ -292,7 +302,8 @@ NuiVisualization::~NuiVisualization()
 //       value is ignored.
 //--------------------------------------------------------------------------------------
 HRESULT NuiVisualization::Initialize( ::D3DDevice* pd3dDevice, DWORD dwComponentsToProcess, 
-                                      NUI_IMAGE_RESOLUTION colorImageResolution )
+                                      NUI_IMAGE_RESOLUTION colorImageResolution,
+                                      BOOL bRenderDashStyleDepthPreview )
 {
     // Pre-conditions
     assert( !m_bIsInitialized );
@@ -388,14 +399,54 @@ HRESULT NuiVisualization::Initialize( ::D3DDevice* pd3dDevice, DWORD dwComponent
         {
             // Initialize color stream video texture
             if( FAILED( InitializeVideoTextures( pd3dDevice, &m_pColorTexture[ i ], m_dwColorStreamWidth, m_dwColorStreamHeight ) ) )
+            {
                 return E_FAIL;
+            }
         }
 
         if( m_dwComponentsToProcess & ( NUI_INITIALIZE_FLAG_USES_DEPTH | NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX ) )
         {
             // Initialize depth stream video texture
-            if( FAILED( InitializeVideoTextures( pd3dDevice, &m_pDepthTexture[ i ], m_dwDepthStreamWidth, m_dwDepthStreamHeight ) ) )
+            if( FAILED( InitializeVideoTextures( pd3dDevice, &m_pDepthTexture[ i ], s_dwDepthStreamWidth, s_dwDepthStreamHeight ) ) )
+            {
                 return E_FAIL;
+            }
+        }
+    }
+
+    // Are we going to be rendering the dash-style depth-preview?
+    if( bRenderDashStyleDepthPreview )
+    {
+        // Create the vertex and pixel shaders.
+        if( FAILED( LoadVertexShader( "game:\\Media\\Shaders\\DepthPreviewSmoothingVS.xvu", &m_pDepthPreviewSmoothingVS ) ) )
+        {
+            return E_FAIL;
+        }
+
+        if( FAILED( LoadPixelShader( "game:\\Media\\Shaders\\DepthPreviewPS.xpu", &m_pDepthPreviewPS ) ) )
+        {
+            return E_FAIL;
+        }
+
+        // Create the depth preview textures.
+        if( FAILED( pd3dDevice->CreateTexture( s_dwDashStyleDepthPreviewWidth,
+                                               s_dwDashStyleDepthPreviewHeight,
+                                               1, 0,
+                                               D3DFMT_LIN_D16,
+                                               0, 
+                                               &m_pSmoothDepthTexture, NULL ) ) )
+        {
+            return E_FAIL;
+        }
+
+        if( FAILED( pd3dDevice->CreateTexture( s_dwDashStyleDepthPreviewWidth,
+                                               s_dwDashStyleDepthPreviewHeight,
+                                               1, 0,
+                                               D3DFMT_LIN_D16,
+                                               0, 
+                                               &m_pSmoothDepthTextureSwap, NULL ) ) )
+        {
+            return E_FAIL;
         }
     }
 
@@ -412,25 +463,38 @@ HRESULT NuiVisualization::Initialize( ::D3DDevice* pd3dDevice, DWORD dwComponent
 //--------------------------------------------------------------------------------------
 HRESULT NuiVisualization::Shutdown()
 {
-    if (m_pVideoVertexDecl != NULL)
+    if( m_pVideoVertexDecl != NULL )
     {
         m_pVideoVertexDecl->Release();
         m_pVideoVertexDecl = NULL;
     }
     
-    if (m_pVideoPixelShaderRGB != NULL)
+    if( m_pVideoPixelShaderRGB != NULL )
     {
         m_pVideoPixelShaderRGB->Release();
         m_pVideoPixelShaderRGB = NULL;
     }
 
-    if (m_pVideoVertexShader != NULL)
+    if( m_pVideoVertexShader != NULL )
     {
         m_pVideoVertexShader->Release();
         m_pVideoVertexShader = NULL;
     }
+
+    SAFE_RELEASE( m_pSmoothDepthTexture );
+    SAFE_RELEASE( m_pSmoothDepthTextureSwap );
+    SAFE_RELEASE( m_pDepthPreviewPS );
+    SAFE_RELEASE( m_pDepthPreviewSmoothingVS );
+    SAFE_RELEASE( m_pNuiDepthTexture );
+
+    m_pSmoothDepthTexture = NULL;
+    m_pSmoothDepthTextureSwap = NULL;
+    m_pDepthPreviewPS = NULL;
+    m_pDepthPreviewSmoothingVS = NULL;
+    m_pNuiDepthTexture = NULL;
     
     m_bIsInitialized = FALSE;
+
     return S_OK;
 }
 
@@ -439,7 +503,7 @@ HRESULT NuiVisualization::Shutdown()
 // Desc: Sets the color stream buffer to be displayed next time DisplayColorStream is 
 //       called.
 //--------------------------------------------------------------------------------------
-HRESULT NuiVisualization::SetColorTexture( IDirect3DTexture9* pColorTexture, NUI_IMAGE_VIEW_AREA* pViewArea /* = NULL */ )
+HRESULT NuiVisualization::SetColorTexture( IDirect3DTexture9* pColorTexture, const NUI_IMAGE_VIEW_AREA* pViewArea /* = NULL */ )
 {
     // Pre-conditions
     assert( m_bIsInitialized );
@@ -471,7 +535,7 @@ HRESULT NuiVisualization::SetColorTexture( IDirect3DTexture9* pColorTexture, NUI
         pColorTexture->UnlockRect( 0 );		
         m_pColorTexture[ textureID ]->UnlockRect( 0 );
 
-        m_colorIsNew = TRUE;
+        m_bColorIsNew = TRUE;
     }
     PIXEndNamedEvent();
     
@@ -491,7 +555,7 @@ HRESULT NuiVisualization::SetColorTexture( IDirect3DTexture9* pColorTexture, NUI
 // Desc: Sets the depth stream buffer to be displayed next time DisplayDepthStream is 
 //       called.
 //--------------------------------------------------------------------------------------
-HRESULT NuiVisualization::SetDepthTexture( IDirect3DTexture9* pDepthTexture )
+HRESULT NuiVisualization::SetDepthTexture( IDirect3DTexture9* pDepthTexture, BOOL bColorize )
 {
     // Pre-conditions
     assert( m_bIsInitialized );
@@ -500,6 +564,11 @@ HRESULT NuiVisualization::SetDepthTexture( IDirect3DTexture9* pDepthTexture )
     PIXBeginNamedEvent( 0, "VisualizeStreams - Fill DepthMap" );
     if( pDepthTexture )
     {
+        // Make a copy of the depth texture, so we can leverage the real depth values.
+        SAFE_RELEASE( m_pNuiDepthTexture );
+        m_pNuiDepthTexture = pDepthTexture;
+        m_pNuiDepthTexture->AddRef();
+
         UINT textureID = m_depthDisplaying == 0 ? 1 : 0;
         D3DLOCKED_RECT Locked;
         if( FAILED( m_pDepthTexture[ textureID ]->LockRect( 0, &Locked, NULL, 0 ) ) )
@@ -520,17 +589,28 @@ HRESULT NuiVisualization::SetDepthTexture( IDirect3DTexture9* pDepthTexture )
         DWORD* lpBits = ( DWORD* )Locked.pBits;
         USHORT* pDepthMapCur = ( USHORT* )LockedSrc.pBits;
         
-        for( UINT y = 0; y < m_dwDepthStreamHeight; ++ y )
+        for( UINT y = 0; y < s_dwDepthStreamHeight; ++ y )
         {
-            for( UINT x = 0; x < m_dwDepthStreamWidth; ++ x )
+            for( UINT x = 0; x < s_dwDepthStreamWidth; ++ x )
             {
-                // To colorize the depth values, normalize the depth value against a maximum depth
-                // value to be colorized and lookup into the color table
-                const static FLOAT fMaxDepth = 3500.0f;                           // use 3.5 meters as max depth to colorize
-                const static UINT uNormalize = (UINT) ceil( fMaxDepth / 511.0 );
-                UINT uIndex = min( (USHORT)( pDepthMapCur[ x ] >> 3 ) / uNormalize, 511 );
+                if( bColorize )
+                {
+                    // To colorize the depth values, normalize the depth value against a maximum depth
+                    // value to be colorized and lookup into the color table
+                    const static FLOAT fMaxDepth = 3500.0f;                           // use 3.5 meters as max depth to colorize
+                    const static UINT uNormalize = (UINT) ceil( fMaxDepth / 511.0 );
+                    UINT uIndex = min( (USHORT)( pDepthMapCur[ x ] >> 3 ) / uNormalize, 511 );
+                
+                    lpBits[x] = m_DepthColorTable[ uIndex ];
+                }
+                else
+                {
+                    const static FLOAT fMaxDepth = 3500.0f;
+                    const static UINT uNormalize = (UINT) ceil( fMaxDepth / 254.0 );
+                    UINT uValue = min( (USHORT)( pDepthMapCur[ x ] >> 3 ) / uNormalize, 254 );
 
-                lpBits[x] = m_DepthColorTable[ uIndex ];
+                    lpBits[x] = D3DCOLOR_RGBA( uValue, uValue, uValue, 0xff ); 
+                }
             }
             lpBits += Locked.Pitch / sizeof( DWORD );
             pDepthMapCur += LockedSrc.Pitch / sizeof( USHORT );
@@ -699,24 +779,20 @@ HRESULT NuiVisualization::RenderColorStream( FLOAT fX, FLOAT fY, FLOAT fWidth, F
     m_pd3dDevice->SetVertexShader( m_pVideoVertexShader );
     m_pd3dDevice->SetVertexDeclaration( m_pVideoVertexDecl );
 
-    if( m_colorIsNew )
+    if( m_bColorIsNew )
     {
         m_colorDisplaying = m_colorDisplaying == 0 ? 1 : 0;
-        m_colorIsNew = FALSE;
+        m_bColorIsNew = FALSE;
     }
     m_pd3dDevice->SetTexture( 0, m_pColorTexture[ m_colorDisplaying ] );
 
     // Fill in the VB for depth stream texture
     VideoFeedVertex g_SnapshotVertices[] =
     {
-        { fX,                                          
-          fY, 0,  0, 0 },
-        { fX + fWidth, 
-          fY, 0,  1, 0 },
-        { fX,                                          
-          fY + fHeight, 0,  0, 1 },
-        //{ fX + fWidth, 
-        //  fY + fHeight, 0,  1, 1 },
+        //  x             y               z   u  v
+        {   fX,           fY,             0,  0, 0 },
+        {   fX + fWidth,  fY,             0,  1, 0 },
+        {   fX,           fY + fHeight,   0,  0, 1 },
     };
 
     VideoFeedVertex* pVertices;
@@ -756,14 +832,10 @@ HRESULT NuiVisualization::RenderCustomDepthStream( FLOAT fX, FLOAT fY, FLOAT fWi
     // Fill in the VB for depth stream texture
     VideoFeedVertex g_SnapshotVertices[] =
     {
-        { fX,                                          
-          fY, 0,  0, 0 },
-        { fX + fWidth, 
-          fY, 0,  1, 0 },
-        { fX,                                          
-          fY + fHeight, 0,  0, 1 },
-        //{ fX + fWidth, 
-        //  fY + fHeight, 0,  1, 1 },
+        //  x             y               z   u  v
+        {   fX,           fY,             0,  0, 0 },
+        {   fX + fWidth,  fY,             0,  1, 0 },
+        {   fX,           fY + fHeight,   0,  0, 1 },
     };
 
     VideoFeedVertex* pVertices;
@@ -781,6 +853,174 @@ HRESULT NuiVisualization::RenderCustomDepthStream( FLOAT fX, FLOAT fY, FLOAT fWi
     return ERROR_SUCCESS;
 }
 
+HRESULT NuiVisualization::RenderDashStyleDepthPreview( FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight )
+{
+    // Early out if nothing to display.
+    if( NULL == m_pNuiDepthTexture )
+        return S_OK;
+
+    PIXBeginNamedEvent( 0, "VisualizeStreams - Render Dash-Style Preview" );
+
+    // Set state we need...(and cache current values for restore later).
+    m_pd3dDevice->GetRenderState( D3DRS_VIEWPORTENABLE, &m_dwSavedState[ SAVEDSTATE_D3DRS_VIEWPORTENABLE ] );
+    m_pd3dDevice->GetRenderState( D3DRS_ZENABLE, &m_dwSavedState[ SAVEDSTATE_D3DRS_ZENABLE ] );
+
+    m_pd3dDevice->SetRenderState( D3DRS_VIEWPORTENABLE, FALSE );
+    m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, FALSE );
+
+    // Smooth the depth texture
+    D3DTexture * pSrcTexture = m_pNuiDepthTexture;
+    D3DTexture * pDstTexture = m_pSmoothDepthTexture;
+
+    // Set the pixel shader here, although we don't use it until later.
+    m_pd3dDevice->SetPixelShader( m_pDepthPreviewPS );
+
+    // Do 3 passes to smooth the depth-map.
+    DWORD dwIteration = 3;
+    do
+    {
+        // Basically just memexport the averaged depth values, ping-ponging between textures.
+        m_pd3dDevice->SetTexture( D3DVERTEXTEXTURESAMPLER0, pSrcTexture );
+        m_pd3dDevice->SetSamplerFilterStates( D3DVERTEXTEXTURESAMPLER0, D3DTEXF_POINT, D3DTEXF_POINT, D3DTEXF_POINT, 1 );
+        GPU_MEMEXPORT_STREAM_CONSTANT MemExportStreamConstant;
+        GPU_SET_MEMEXPORT_STREAM_CONSTANT( &MemExportStreamConstant,
+                                            ( USHORT* )( pDstTexture->Format.BaseAddress << GPU_TEXTURE_ADDRESS_SHIFT ),
+                                            s_dwDashStyleDepthPreviewPitch * s_dwDashStyleDepthPreviewHeight,
+                                            SURFACESWAP_LOW_RED,
+                                            GPUSURFACENUMBER_UINTEGER,
+                                            GPUCOLORFORMAT_16,
+                                            GPUENDIAN128_8IN16 );
+
+        m_pd3dDevice->SetVertexShaderConstantF( 0, ( FLOAT* ) &MemExportStreamConstant, 1 );
+        m_pd3dDevice->SetVertexShader( m_pDepthPreviewSmoothingVS );
+        m_pd3dDevice->BeginExport( 0, pDstTexture, D3DBEGINEXPORT_VERTEXSHADER );
+        m_pd3dDevice->DrawPrimitive( D3DPT_POINTLIST, 0, s_dwDashStyleDepthPreviewWidth * s_dwDashStyleDepthPreviewHeight );
+        m_pd3dDevice->EndExport( 0, pDstTexture, 0 );
+
+        // Swap (ping-pong) our textures until the final pass.
+        if( --dwIteration )
+        {
+            pSrcTexture = pDstTexture;
+            pDstTexture = ( pDstTexture == m_pSmoothDepthTexture ) ? m_pSmoothDepthTextureSwap : m_pSmoothDepthTexture;
+        }
+    } 
+    while( dwIteration > 0 );
+
+    // Unset the vertex shader texture.
+    m_pd3dDevice->SetTexture( D3DVERTEXTEXTURESAMPLER0, NULL );
+
+    // Now set up to actually render the smoothed depth map, with lights, etc.
+    m_pd3dDevice->SetTexture( 0, pDstTexture );
+    m_pd3dDevice->SetVertexDeclaration( m_pVideoVertexDecl );
+    m_pd3dDevice->SetVertexShader( m_pVideoVertexShader );
+    m_pd3dDevice->SetSamplerFilterStates( 0, D3DTEXF_POINT, D3DTEXF_POINT, D3DTEXF_POINT, 1 );
+
+    enum PLAYER_DATA_PARTS
+    {
+        PLAYER_HEAD = 0,
+        PLAYER_NECK,
+        PLAYER_SHOULDER,
+        PLAYER_LEFT_HAND,
+        PLAYER_RIGHT_HAND,
+        PLAYER_PLANE,
+    };
+
+    // Initialize our tracking vectors.
+    // Use tracked hands as light sources.
+    XMVECTOR PlayerData[ NUI_SKELETON_COUNT ];
+    XMVECTOR TrackedLeftHandPos[ NUI_SKELETON_COUNT ];
+    XMVECTOR TrackedRightHandPos[ NUI_SKELETON_COUNT ];
+    XMemSet( TrackedLeftHandPos, 0, sizeof( TrackedLeftHandPos ) );
+    XMemSet( TrackedRightHandPos, 0, sizeof( TrackedRightHandPos ) );
+
+    // Get all tracked hand positions
+    INT nFirstTrackedPlayer = -1;
+    for( UINT i = 0; i < NUI_SKELETON_COUNT; ++i )
+    {
+        if( m_SkeletonFrame.SkeletonData[ i ].eTrackingState == NUI_SKELETON_TRACKED )
+        {
+            if( nFirstTrackedPlayer == -1 )
+                nFirstTrackedPlayer = i;
+
+            if( m_SkeletonFrame.SkeletonData[ i ].eSkeletonPositionTrackingState[ NUI_SKELETON_POSITION_HAND_LEFT ] != NUI_SKELETON_POSITION_NOT_TRACKED )
+            {
+                TrackedLeftHandPos[ i ] = m_SkeletonFrame.SkeletonData[ i ].SkeletonPositions[ NUI_SKELETON_POSITION_HAND_LEFT ];
+            }
+            if( m_SkeletonFrame.SkeletonData[ i ].eSkeletonPositionTrackingState[ NUI_SKELETON_POSITION_HAND_RIGHT ] != NUI_SKELETON_POSITION_NOT_TRACKED )
+            {
+                TrackedRightHandPos[ i ] = m_SkeletonFrame.SkeletonData[ i ].SkeletonPositions[ NUI_SKELETON_POSITION_HAND_RIGHT ];
+            }
+        }
+    }
+
+    // If we find a tracked player, grab their hand positions.
+    if( nFirstTrackedPlayer != -1 )
+    {
+        PlayerData[ PLAYER_HEAD ] = m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].SkeletonPositions[ NUI_SKELETON_POSITION_HEAD ];
+        PlayerData[ PLAYER_NECK ] = m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].SkeletonPositions[ NUI_SKELETON_POSITION_SHOULDER_CENTER ];
+        PlayerData[ PLAYER_SHOULDER ] = m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].SkeletonPositions[ NUI_SKELETON_POSITION_SHOULDER_RIGHT ];
+        if( m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].eSkeletonPositionTrackingState[ NUI_SKELETON_POSITION_HAND_LEFT ] != NUI_SKELETON_POSITION_NOT_TRACKED )
+        {
+            PlayerData[ PLAYER_LEFT_HAND ] = m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].SkeletonPositions[ NUI_SKELETON_POSITION_HAND_LEFT ];
+        }
+        if( m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].eSkeletonPositionTrackingState[ NUI_SKELETON_POSITION_HAND_RIGHT ] != NUI_SKELETON_POSITION_NOT_TRACKED )
+        {
+            PlayerData[ PLAYER_RIGHT_HAND ] = m_SkeletonFrame.SkeletonData[ nFirstTrackedPlayer ].SkeletonPositions[ NUI_SKELETON_POSITION_HAND_RIGHT ];
+        }
+
+        XMVECTOR v1 = PlayerData[ PLAYER_HEAD ] - PlayerData[ PLAYER_NECK ];
+        XMVECTOR v2 = PlayerData[ PLAYER_SHOULDER ] - PlayerData[ PLAYER_NECK ];
+        if( XMVectorGetX( XMVector3Length( v1 ) ) == 0 || XMVectorGetX( XMVector3Length( v2 ) ) == 0 )
+        {
+            // If we don't get valid data to be able to calculate our player plane, we should probably just flag this player as not tracked.
+            nFirstTrackedPlayer = -1;
+        }
+        else
+        {
+            XMVECTOR Normal = XMVector3Normalize( XMVector3Cross( v2, v1 ) );
+            FLOAT d = XMVectorGetX( XMVector3Dot( Normal, PlayerData[ PLAYER_HEAD ] ) );
+            PlayerData[ PLAYER_PLANE ] = XMVectorSetW( Normal, -d );
+        }
+    }
+
+    // Set shader constants.
+    m_pd3dDevice->SetPixelShaderConstantF( 1, ( FLOAT* ) PlayerData, 6 );
+
+    BOOL Engaged = ( nFirstTrackedPlayer != -1 ) ? FALSE : TRUE;
+    BOOL EngagedConst[ 4 ] = { Engaged, Engaged, Engaged, Engaged };
+    m_pd3dDevice->SetPixelShaderConstantB( 0, EngagedConst, 1 );
+
+    m_pd3dDevice->SetPixelShaderConstantF( 8, ( FLOAT* ) &TrackedLeftHandPos, 6 );
+    m_pd3dDevice->SetPixelShaderConstantF( 14, ( FLOAT* ) &TrackedRightHandPos, 6 );
+    XMVECTOR OpacityConst = XMVectorSet( 1.0f, 1.0f, 1.0f, 1.0f );
+    m_pd3dDevice->SetPixelShaderConstantF( 20, ( FLOAT* )&OpacityConst, 1 );
+
+    // Fill in the VB for depth stream texture
+    VideoFeedVertex SnapshotVertices[] =
+    {
+        //  x             y               z   u  v
+        {   fX,           fY,             0,  0, 0 },
+        {   fX + fWidth,  fY,             0,  1, 0 },
+        {   fX,           fY + fHeight,   0,  0, 1 },
+    };
+
+    VideoFeedVertex* pVertices;
+
+    m_pd3dDevice->BeginVertices( D3DPT_RECTLIST, 3, sizeof( *SnapshotVertices ), &(VOID*&)pVertices );
+    memcpy( pVertices, SnapshotVertices, sizeof( SnapshotVertices ) );
+    m_pd3dDevice->EndVertices();
+
+    m_pd3dDevice->SetRenderState( D3DRS_DESTBLEND, D3DBLEND_ONE );
+
+    // Restore render states.
+    m_pd3dDevice->SetRenderState( D3DRS_VIEWPORTENABLE, m_dwSavedState[ SAVEDSTATE_D3DRS_VIEWPORTENABLE ] );
+    m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, m_dwSavedState[ SAVEDSTATE_D3DRS_ZENABLE ] );
+
+    PIXEndNamedEvent();
+
+    return ERROR_SUCCESS;
+}
+
 
 //--------------------------------------------------------------------------------------
 // Name: RenderDepthStream
@@ -792,8 +1032,6 @@ HRESULT NuiVisualization::RenderDepthStream( FLOAT fX, FLOAT fY, FLOAT fWidth, F
 }
 
 
-#define PI 3.14159265359f
-#define DEGREES_TO_RADIANS(x) ( ( x ) * ( PI / 180.0f ) )
 XMFLOAT2 g_ScreenSpaceJoints[ NUI_SKELETON_POSITION_COUNT ];
 
 
@@ -819,6 +1057,61 @@ HRESULT NuiVisualization::RenderSkeletons( FLOAT fX, FLOAT fY, FLOAT fWidth, FLO
     return ERROR_SUCCESS;
 }
 
+//--------------------------------------------------------------------------------------
+// Name: GetJointProjectedLocation
+// Desc: Computes the projected position of a specific skeleton joint.
+//--------------------------------------------------------------------------------------
+XMFLOAT2 NuiVisualization::GetJointProjectedLocation( DWORD dwSkeletonIndex, NUI_SKELETON_POSITION_INDEX SkeletonPositionIndex, FLOAT fWidth, FLOAT fHeight, BOOL bRegisterToColor ) const
+{
+    XMFLOAT3 vJointLocation;
+    XMStoreFloat3( &vJointLocation, m_SkeletonFrame.SkeletonData[ dwSkeletonIndex ].SkeletonPositions[ SkeletonPositionIndex ] );
+
+    // Check for divide by zero
+    if ( fabs( vJointLocation.z ) > FLT_EPSILON  )
+    {
+        // Note:  Without tilt correction, any projection will be off, as the skeleton positions 
+        //        are camera-relative, with Up as ( 0, 1, 0), which the axis of the camera may
+        //        not be aligned to. You can see this by turning on and off tilt correction
+        //        in the sample.
+
+        LONG plDepthX, plDepthY, plColorX, plColorY;
+        USHORT usDepthValue;
+        NuiTransformSkeletonToDepthImage( m_SkeletonFrame.SkeletonData[ dwSkeletonIndex ].SkeletonPositions[ SkeletonPositionIndex ],
+                                          &plDepthX, &plDepthY, &usDepthValue );
+        
+        if ( bRegisterToColor )
+        {
+            HRESULT hr = NuiImageGetColorPixelCoordinatesFromDepthPixel( m_colorImageResolution,
+                                                                         &m_colorViewArea,
+                                                                         plDepthX,
+                                                                         plDepthY,
+                                                                         usDepthValue,
+                                                                         &plColorX,
+                                                                         &plColorY );
+
+            if ( SUCCEEDED( hr ) )
+            {
+                return XMFLOAT2( plColorX * fWidth / m_dwColorStreamWidth, plColorY * fWidth / m_dwColorStreamWidth );       
+            }
+            else
+            {
+                // When a corresponding color value isn't avaible, use the raw depth value instead. 
+                return XMFLOAT2( plDepthX * fWidth / s_dwDepthStreamWidth, plDepthY * fHeight / s_dwDepthStreamHeight );       
+            }
+        }
+        else
+        {
+            return XMFLOAT2( plDepthX * fWidth / s_dwDepthStreamWidth, plDepthY * fHeight / s_dwDepthStreamHeight );       
+        }
+    }
+    else
+    {
+        // A joint that is so close to the camera that its Z value is 0 can simply be drawn directly 
+        // at the center of the 2D plane.
+        return XMFLOAT2( fWidth * 0.5f , fHeight * 0.5f  );       
+    }
+}
+
 
 //--------------------------------------------------------------------------------------
 // Name: RenderSingleSkeleton
@@ -831,7 +1124,9 @@ HRESULT NuiVisualization::RenderSingleSkeleton( DWORD dwSkeletonIndex, FLOAT fX,
     assert( dwSkeletonIndex < NUI_SKELETON_COUNT );
     assert( m_dwComponentsToProcess & NUI_INITIALIZE_FLAG_USES_SKELETON );
     if( bRegisterToColor )
+    {
         assert( m_dwComponentsToProcess & NUI_INITIALIZE_FLAG_USES_COLOR );
+    }
     
     PIXBeginNamedEvent( 0, __FUNCTION__ );
 
@@ -845,78 +1140,18 @@ HRESULT NuiVisualization::RenderSingleSkeleton( DWORD dwSkeletonIndex, FLOAT fX,
         
     XMFLOAT2 vScreenSpaceJoints[ NUI_SKELETON_POSITION_COUNT ];
 
-    // Pre-compute part of the transformation for speed efficiency.
-    FLOAT fHalfWindowWidth = fWidth * 0.5f ;
-    FLOAT fHalfWindowHeight = fHeight * 0.5f;    
-
-    FLOAT fXDepthRatioToDisplay = fWidth / m_dwDepthStreamWidth;
-    FLOAT fYDepthRatioToDisplay = fHeight / m_dwDepthStreamHeight;
-    FLOAT fXColorRatioToDisplay = fWidth / m_dwColorStreamWidth;
-    FLOAT fYColorRatioToDisplay = fWidth / m_dwColorStreamWidth;
-
     // Set up render states
     BeginRender();
 
     // Project the world space joints into screen space
     for ( UINT i = 0; i < NUI_SKELETON_POSITION_COUNT; ++ i )
     {
-        XMFLOAT3 vJointLocation;
-        XMStoreFloat3( &vJointLocation, m_SkeletonFrame.SkeletonData[ dwSkeletonIndex ].SkeletonPositions[ i ] );
-
-        // Check for divide by zero
-        if ( fabs( vJointLocation.z ) > FLT_EPSILON  )
-        {
-            // Note:  Without tilt correction, any projection will be off, as the skeleton positions 
-            //        are camera-relative, with Up as ( 0, 1, 0), which the axis of the camera may
-            //        not be aligned to. You can see this by turning on and off tilt correction
-            //        in the sample.
-
-            LONG plDepthX, plDepthY, plColorX, plColorY;
-            USHORT usDepthValue;
-            NuiTransformSkeletonToDepthImage( m_SkeletonFrame.SkeletonData[ dwSkeletonIndex ].SkeletonPositions[ i ],
-                &plDepthX, &plDepthY, &usDepthValue );
-            
-            if ( bRegisterToColor )
-            {
-                HRESULT hr = NuiImageGetColorPixelCoordinatesFromDepthPixel(
-                    m_colorImageResolution,
-                    &m_colorViewArea,
-                    plDepthX,
-                    plDepthY,
-                    usDepthValue,
-                    &plColorX,
-                    &plColorY);
-
-                if ( SUCCEEDED( hr ) )
-                {
-                    g_ScreenSpaceJoints[i].x = ( (FLOAT) plColorX ) * fXColorRatioToDisplay;
-                    g_ScreenSpaceJoints[i].y = ( (FLOAT) plColorY ) * fYColorRatioToDisplay;            
-                }
-                else
-                {
-                    // When a corresponding color value isn't avaible, use the raw depth value instead. 
-                    g_ScreenSpaceJoints[i].x = ( (FLOAT) plDepthX ) * fXDepthRatioToDisplay;
-                    g_ScreenSpaceJoints[i].y = ( (FLOAT) plDepthY ) * fYDepthRatioToDisplay;
-                }
-            }
-            else
-            {
-                g_ScreenSpaceJoints[i].x = ( (FLOAT) plDepthX ) * fXDepthRatioToDisplay;
-                g_ScreenSpaceJoints[i].y = ( (FLOAT) plDepthY ) * fYDepthRatioToDisplay;
-            }
-        }
-        else
-        {
-            // A joint that is so close to the camera that its Z value is 0 can simply be drawn directly 
-            // at the center of the 2D plane.
-            g_ScreenSpaceJoints[ i ].x = fHalfWindowWidth;
-            g_ScreenSpaceJoints[ i ].y = fHalfWindowHeight;
-        }
+        g_ScreenSpaceJoints[ i ] = GetJointProjectedLocation( dwSkeletonIndex, ( NUI_SKELETON_POSITION_INDEX )i, fWidth, fHeight, bRegisterToColor );
     }
 
 
     // Locate the beginning of the confidence array. We'll index into this array in the next loop.
-    const NUI_SKELETON_POSITION_TRACKING_STATE *pSkeletonTrackingState = & m_SkeletonFrame.SkeletonData[ dwSkeletonIndex ].eSkeletonPositionTrackingState[ 0 ];
+    const NUI_SKELETON_POSITION_TRACKING_STATE *pSkeletonTrackingState = &m_SkeletonFrame.SkeletonData[ dwSkeletonIndex ].eSkeletonPositionTrackingState[ 0 ];
     const NUI_VISUALIZATION_SKELETON_RENDER_INFO *pSkeletonRenderInfo = &m_SkeletonRenderInfo[ dwSkeletonIndex ];
 
     // Draw each bone in the skeleton using the screen space joints

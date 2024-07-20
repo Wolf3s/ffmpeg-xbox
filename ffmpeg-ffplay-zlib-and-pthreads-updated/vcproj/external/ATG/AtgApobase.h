@@ -68,7 +68,8 @@ protected:
         const ParameterClass& params,
         FLOAT32* __restrict pData,
         UINT32 cFrames,
-        UINT32 cChannels ) = 0;
+        UINT32 cChannels,
+        BOOL bIsEnabled  ) = 0;
 
     // Do any necessary calculations in response to parameter changes.
     // NOT marked pure virtual because there may not be a reason to
@@ -210,7 +211,8 @@ void CSampleXAPOBase<APOClass, ParameterClass>::Process(
             *pParams,
             (FLOAT32* __restrict)pInputProcessParameters[0].pBuffer,
             pInputProcessParameters[0].ValidFrameCount,
-            m_wfx.nChannels );
+            m_wfx.nChannels,
+            IsEnabled );
     }
     else if( pInputProcessParameters[0].BufferFlags == XAPO_BUFFER_VALID )
     {
@@ -218,7 +220,8 @@ void CSampleXAPOBase<APOClass, ParameterClass>::Process(
             *pParams,
             (FLOAT32* __restrict)pInputProcessParameters[0].pBuffer,
             pInputProcessParameters[0].ValidFrameCount,
-            m_wfx.nChannels );
+            m_wfx.nChannels,
+            IsEnabled );
     }
     EndProcess();
 

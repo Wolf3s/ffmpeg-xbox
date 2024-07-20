@@ -16,6 +16,19 @@
 
 namespace ATG
 {
+//--------------------------------------------------------------------------------------
+// FourCC definitions
+//--------------------------------------------------------------------------------------
+const DWORD ATG_FOURCC_RIFF = 'RIFF';
+const DWORD ATG_FOURCC_WAVE = 'WAVE';
+const DWORD ATG_FOURCC_XWMA = 'XWMA';
+const DWORD ATG_FOURCC_DPDS = 'dpds';
+const DWORD ATG_FOURCC_SEEK = 'seek';
+const DWORD ATG_FOURCC_FORMAT = 'fmt ';
+const DWORD ATG_FOURCC_DATA = 'data';
+const DWORD ATG_FOURCC_WSMP = 'wsmp';
+const DWORD ATG_FOURCC_SMPL = 'lsmp';
+
 
 
 //--------------------------------------------------------------------------------------
@@ -93,6 +106,7 @@ class WaveFile
     RiffChunk m_WaveSampleChunk;  // Wave Sample chunk
     RiffChunk m_SamplerChunk;     // Sampler chunk
     RiffChunk m_DpdsChunk;        // Packet cumulative bytes chunk (XWMA only)
+    RiffChunk m_SeekChunk;        // Seek chunk (XMA only)
 
 public:
             WaveFile();
@@ -132,13 +146,25 @@ public:
     // The buffer size is the total size, in bytes, of the structure. The client can use this value to allocate a pointer to
     // pass to GetPacketCumulativeBytes.
     // This function should be used with XWMA files only.
-    HRESULT GetPacketCumulativeBytesSize(DWORD* pdwPacketCount, DWORD* pdwBufferSize);
+    HRESULT GetPacketCumulativeBytesSize( DWORD* pdwPacketCount, DWORD* pdwBufferSize );
 
     // The 'dpds' chunk - packet cumulative bytes. Returns the structure data.
     // 'pdwData' should point to a memory block large enough to hold all the data. The exact number of bytes
     // required can be obtained by calling GetPacketCumulativeBytes.
     // This function should be used with XWMA files only.
-    HRESULT GetPacketCumulativeBytes(DWORD* pdwData);
+    HRESULT GetPacketCumulativeBytes( DWORD* pdwData );
+
+    // The 'seek' chunk - seek table. Returns the total structure size, in bytes.
+    // The buffer size is the total size, in bytes, of the structure. The client can use this value to allocate a pointer to
+    // pass to GetSeekTable.
+    // This function should be used with XMA files only.
+    HRESULT GetSeekTableSize( DWORD* pdwBufferSize );
+
+    // The 'seek' chunk - seek table. Returns the structure data.
+    // 'pdwData' should point to a memory block large enough to hold all the data. The exact number of bytes
+    // required can be obtained by calling GetSeekTableSize.
+    // This function should be used with XMA files only.
+    HRESULT GetSeekTable( DWORD* pdwData );
 
 private:
     // prevent copying so that we don't have to duplicate file handles

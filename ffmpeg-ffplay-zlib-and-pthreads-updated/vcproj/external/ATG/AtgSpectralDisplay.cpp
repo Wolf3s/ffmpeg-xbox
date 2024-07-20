@@ -268,8 +268,11 @@ CMonitorAPO::~CMonitorAPO()
 // Name: CMonitorAPO::DoProcess
 // Desc: Process by copying off a portion of the samples to another thread via a LF pipe
 //--------------------------------------------------------------------------------------
-void CMonitorAPO::DoProcess( const MonitorAPOParams& params, FLOAT32* __restrict pData, UINT32 cFrames, UINT32 cChannels )
+void CMonitorAPO::DoProcess( const MonitorAPOParams& params, FLOAT32* __restrict pData, UINT32 cFrames, UINT32 cChannels, BOOL bIsEnabled )
 {
+    if (!bIsEnabled)
+        return;
+
     if( cFrames )
     {
         MonitorAPOPipe* pipe = params.pipe;

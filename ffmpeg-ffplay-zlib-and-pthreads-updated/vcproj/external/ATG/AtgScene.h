@@ -47,6 +47,8 @@ public:
     const CHAR*             GetFileName() const { return m_strFileName; }
     const CHAR*             GetMediaRootPath() const { return m_strMediaRootPath; }
 
+    VOID                    Render( ::D3DDevice* pd3dDevice, BOOL bSetTextures = TRUE );
+
 private:
     FXLEffectPool* m_pGlobalParameterPool;
     ResourceDatabase* m_pResourceDatabase;

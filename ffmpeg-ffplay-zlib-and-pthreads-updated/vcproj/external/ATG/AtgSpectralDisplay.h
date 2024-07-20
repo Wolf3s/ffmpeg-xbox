@@ -32,7 +32,7 @@ public:
     CMonitorAPO();
     ~CMonitorAPO();
 
-    void DoProcess( const MonitorAPOParams&, FLOAT32* __restrict pData, UINT32 cFrames, UINT32 cChannels );
+    void DoProcess( const MonitorAPOParams&, FLOAT32* __restrict pData, UINT32 cFrames, UINT32 cChannels, BOOL bEnabled );
 };
 
 class CWaveDisplay

@@ -15,18 +15,6 @@ namespace ATG
 {
 
 
-//--------------------------------------------------------------------------------------
-// FourCC definitions
-//--------------------------------------------------------------------------------------
-const DWORD ATG_FOURCC_RIFF = 'RIFF';
-const DWORD ATG_FOURCC_WAVE = 'WAVE';
-const DWORD ATG_FOURCC_XWMA = 'XWMA';
-const DWORD ATG_FOURCC_DPDS = 'dpds';
-const DWORD ATG_FOURCC_FORMAT = 'fmt ';
-const DWORD ATG_FOURCC_DATA = 'data';
-const DWORD ATG_FOURCC_WSMP = 'wsmp';
-const DWORD ATG_FOURCC_SMPL = 'lsmp';
-
 
 //--------------------------------------------------------------------------------------
 // RIFF chunk type that contains loop point information
@@ -249,6 +237,7 @@ HRESULT WaveFile::Open( const CHAR* strFileName )
     m_WaveSampleChunk.Initialize( ATG_FOURCC_WSMP, &m_RiffChunk, m_hFile );
     m_SamplerChunk.Initialize( ATG_FOURCC_SMPL, &m_RiffChunk, m_hFile );
     m_DpdsChunk.Initialize( ATG_FOURCC_DPDS, &m_RiffChunk, m_hFile );
+    m_SeekChunk.Initialize( ATG_FOURCC_SEEK, &m_RiffChunk, m_hFile );
 
     HRESULT hr = m_RiffChunk.Open();
     if( FAILED( hr ) )
@@ -268,6 +257,9 @@ HRESULT WaveFile::Open( const CHAR* strFileName )
 
     // Dpds chunk is valid only for XWMA files
     m_DpdsChunk.Open();
+
+    // Seek chunk is valid only for XMA files
+    m_SeekChunk.Open();
 
     // Validate the file type
     FOURCC fccType;
@@ -587,7 +579,7 @@ HRESULT WaveFile::GetLoopRegionBytes( DWORD* pdwStart, DWORD* pdwLength ) const
 // Name: GetPacketCumulativeBytesSize()
 // Desc: Gets the packet count and the total byte size of the 'dpds' chunk.
 //--------------------------------------------------------------------------------------
-HRESULT WaveFile::GetPacketCumulativeBytesSize(DWORD* pdwPacketCount, DWORD* pdwBufferSize)
+HRESULT WaveFile::GetPacketCumulativeBytesSize( DWORD* pdwPacketCount, DWORD* pdwBufferSize )
 {
     assert( m_DpdsChunk.IsValid() );
 
@@ -605,7 +597,11 @@ HRESULT WaveFile::GetPacketCumulativeBytesSize(DWORD* pdwPacketCount, DWORD* pdw
     return S_OK;
 }
 
-HRESULT WaveFile::GetPacketCumulativeBytes(DWORD* pdwData)
+//--------------------------------------------------------------------------------------
+// Name: GetPacketCumulativeBytes()
+// Desc: Gets the dpds structure data.
+//--------------------------------------------------------------------------------------
+HRESULT WaveFile::GetPacketCumulativeBytes( DWORD* pdwData )
 {
     assert( m_DpdsChunk.IsValid() );
     assert( pdwData != NULL );
@@ -618,7 +614,7 @@ HRESULT WaveFile::GetPacketCumulativeBytes(DWORD* pdwData)
     DWORD dwPacketCount;
     DWORD dwBufferSize;
 
-    hr = GetPacketCumulativeBytesSize(&dwPacketCount, &dwBufferSize);
+    hr = GetPacketCumulativeBytesSize( &dwPacketCount, &dwBufferSize );
     if( FAILED( hr ) )
         return hr;
 
@@ -632,6 +628,49 @@ HRESULT WaveFile::GetPacketCumulativeBytes(DWORD* pdwData)
             pdwData[dw] = _byteswap_ulong(pdwData[dw]);
         }
     #endif
+
+    return S_OK;
+}
+
+//--------------------------------------------------------------------------------------
+// Name: GetSeekTableSize()
+// Desc: Gets the total byte size of the 'seek' chunk.
+//--------------------------------------------------------------------------------------
+HRESULT WaveFile::GetSeekTableSize( DWORD* pdwBufferSize )
+{
+    assert( m_SeekChunk.IsValid() );
+
+    if ( !m_SeekChunk.IsValid() )
+        return E_HANDLE;
+
+    *pdwBufferSize = m_SeekChunk.GetDataSize();
+
+    return S_OK;
+}
+
+//--------------------------------------------------------------------------------------
+// Name: GetSeekTable()
+// Desc: Gets the seek table.
+//--------------------------------------------------------------------------------------
+HRESULT WaveFile::GetSeekTable( DWORD* pdwData )
+{
+    assert( m_SeekChunk.IsValid() );
+    assert( pdwData != NULL );
+
+    HRESULT hr = S_OK;
+
+    if ( !m_SeekChunk.IsValid() )
+        return E_HANDLE;
+
+    DWORD dwBufferSize;
+
+    hr = GetSeekTableSize( &dwBufferSize );
+    if( FAILED( hr ) )
+        return hr;
+
+    hr = m_SeekChunk.ReadData( 0, pdwData, dwBufferSize, NULL );
+    if( FAILED( hr ) )
+        return hr;
 
     return S_OK;
 }

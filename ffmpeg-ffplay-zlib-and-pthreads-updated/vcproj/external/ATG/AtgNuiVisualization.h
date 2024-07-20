@@ -60,15 +60,18 @@ public:
 
 
     HRESULT Initialize( ::D3DDevice* pd3dDevice, DWORD dwComponentsToProcess, 
-		                NUI_IMAGE_RESOLUTION colorImageResolution );
+    	                NUI_IMAGE_RESOLUTION colorImageResolution = NUI_IMAGE_RESOLUTION_640x480,
+                        BOOL bRenderDashStyleDepthPreview = FALSE );
 	HRESULT Shutdown();
 
-    HRESULT SetColorTexture( IDirect3DTexture9* pColorTexture, NUI_IMAGE_VIEW_AREA* pViewArea = NULL );
-    HRESULT SetDepthTexture( IDirect3DTexture9* pDepthTexture );
+    HRESULT SetColorTexture( IDirect3DTexture9* pColorTexture, const NUI_IMAGE_VIEW_AREA* pViewArea = NULL );
+    HRESULT SetDepthTexture( IDirect3DTexture9* pDepthTexture, BOOL bColorize = TRUE );
     HRESULT SetSkeletons( const NUI_SKELETON_FRAME* pSkeletonFrame );
 
     HRESULT SetSkeletonRenderInfo( DWORD dwSkeletonIndex, const NUI_VISUALIZATION_SKELETON_RENDER_INFO* pSkeletonRenderInfo );
     HRESULT GetSkeletonRenderInfo( DWORD dwSkeletonIndex, NUI_VISUALIZATION_SKELETON_RENDER_INFO* pSkeletonRenderInfo );
+
+    XMFLOAT2 GetJointProjectedLocation( DWORD dwSkeletonIndex, NUI_SKELETON_POSITION_INDEX SkeletonPositionIndex, FLOAT fWidth, FLOAT fHeight, BOOL bRegisterToColor = FALSE ) const;
 
     VOID BeginRender();
     VOID EndRender();
@@ -76,11 +79,13 @@ public:
     HRESULT RenderColorStream( FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight );
     HRESULT RenderDepthStream( FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight );
     HRESULT RenderSkeletons( FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight, BOOL bClip = FALSE, BOOL bRegisterToColor = FALSE );
-    HRESULT RenderSingleSkeleton( DWORD dwSkeletonIndex, FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight, BOOL bClip = FALSE, BOOL bRegisterToColor = FALSE);
+    HRESULT RenderSingleSkeleton( DWORD dwSkeletonIndex, FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight, BOOL bClip = FALSE, BOOL bRegisterToColor = FALSE );
     HRESULT RenderCustomDepthStream( FLOAT fX, FLOAT fY, FLOAT fWidth, FLOAT fHeight, LPDIRECT3DTEXTURE9 pTexture );
+    HRESULT RenderDashStyleDepthPreview( FLOAT fX, float fY, float fWidth, FLOAT fHeight );
 
 
-    D3DCOLOR* GetColorTable() {
+    inline D3DCOLOR* GetColorTable() 
+    {
         return &m_DepthColorTable[0];
     }
     inline const IDirect3DTexture9* GetVis320x240Texture ()
@@ -125,24 +130,35 @@ private:
     IDirect3DVertexShader9*      m_pVideoVertexShader;   // Vertex Shader
     IDirect3DPixelShader9*       m_pVideoPixelShaderRGB; // Pixel Shader for RGB image
 
-	BOOL m_bIsInitialized;
-    BOOL m_colorIsNew;      
+    BOOL m_bIsInitialized;
+    BOOL m_bColorIsNew;      
     UINT m_colorDisplaying;
     UINT m_depthDisplaying;
     IDirect3DTexture9* m_pColorTexture[ 2 ];
     IDirect3DTexture9* m_pDepthTexture[ 2 ];
 
-	// Caller supplied information.
-	::D3DDevice* m_pd3dDevice;
-	DWORD m_dwComponentsToProcess;
+    // Depth preview declarations, shaders and textures.
+    IDirect3DVertexShader9*         m_pDepthPreviewVS;
+    IDirect3DPixelShader9*          m_pDepthPreviewPS;
+    IDirect3DVertexShader9*         m_pDepthPreviewSmoothingVS;
+    IDirect3DTexture9*              m_pSmoothDepthTexture;
+    IDirect3DTexture9*              m_pSmoothDepthTextureSwap;
+    IDirect3DTexture9*              m_pNuiDepthTexture;
+
+    // Caller supplied information.
+    ::D3DDevice* m_pd3dDevice;
+    DWORD m_dwComponentsToProcess;
 
     // Each color streams can have different dimensions but the depth stream is always 320 X 240.
     NUI_IMAGE_RESOLUTION m_colorImageResolution;
     DWORD m_dwColorStreamWidth;
     DWORD m_dwColorStreamHeight;
     NUI_IMAGE_VIEW_AREA m_colorViewArea;
-    const static DWORD m_dwDepthStreamWidth = 320;
-    const static DWORD m_dwDepthStreamHeight = 240;
+    const static DWORD s_dwDepthStreamWidth = 320;
+    const static DWORD s_dwDepthStreamHeight = 240;
+    const static DWORD s_dwDashStyleDepthPreviewWidth = 128;
+    const static DWORD s_dwDashStyleDepthPreviewPitch = 128;
+    const static DWORD s_dwDashStyleDepthPreviewHeight = 96;
 
     // D3D State  preserving information
     DWORD m_dwNestedBeginCount;

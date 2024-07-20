@@ -21,8 +21,12 @@
     <File Name="AtgFont.h" Rights="Sample Code"/>
     <File Name="AtgHelp.cpp" Rights="Sample Code"/>
     <File Name="AtgHelp.h" Rights="Sample Code"/>
+    <File Name="AtgHttp.cpp" Rights="Sample Code"/>
+    <File Name="AtgHttp.h" Rights="Sample Code"/>
     <File Name="AtgInput.cpp" Rights="Sample Code"/>
     <File Name="AtgInput.h" Rights="Sample Code"/>
+    <File Name="AtgJson.cpp" Rights="Sample Code"/>
+    <File Name="AtgJson.h" Rights="Sample Code"/>
     <File Name="AtgMediaLocator.cpp" Rights="Sample Code"/>
     <File Name="AtgMediaLocator.h" Rights="Sample Code"/>
     <File Name="AtgMesh.cpp" Rights="Sample Code"/>
@@ -31,6 +35,8 @@
     <File Name="AtgPostProcess.h" Rights="Sample Code"/>
     <File Name="AtgResource.cpp" Rights="Sample Code"/>
     <File Name="AtgResource.h" Rights="Sample Code"/>
+    <File Name="AtgRest.cpp" Rights="Sample Code"/>
+    <File Name="AtgRest.h" Rights="Sample Code"/>
     <File Name="AtgSignIn.h" Rights="Sample Code"/>
     <File Name="AtgSignIn.cpp" Rights="Sample Code"/>
     <File Name="AtgUtil.cpp" Rights="Sample Code"/>
@@ -68,11 +74,15 @@
     <File Name="AtgNuiHandRefinement.h" Rights="Sample Code"/>
     <File Name="AtgNuiHandRefinement.cpp" Rights="Sample Code"/>
     <File Name="AtgNuiJointConverter.h" Rights="Sample Code"/>
+    <File Name="AtgNuiMenu.cpp" Rights="Sample Code"/>
+    <File Name="AtgNuiMenu.h" Rights="Sample Code"/>
+    <File Name="AtgNuiRelativeCoordinates.cpp" Rights="Sample Code"/>
+    <File Name="AtgNuiRelativeCoordinates.h" Rights="Sample Code"/>
     <File Name="AtgNuiJointConverter.cpp" Rights="Sample Code"/>
     <File Name="AtgNuiVisualization.h" Rights="Sample Code"/>
     <File Name="AtgNuiVisualization.cpp" Rights="Sample Code"/>
-    <File Name="AtgJointFilter.h" Rights="Sample Code"/>
-    <File Name="AtgJointFilter.cpp" Rights="Sample Code"/>
+    <File Name="AtgNuiJointFilter.h" Rights="Sample Code"/>
+    <File Name="AtgNuiJointFilter.cpp" Rights="Sample Code"/>
     <File Name="AtgResourceDatabase.h" Rights="Sample Code"/>
     <File Name="AtgResourceDatabase.cpp" Rights="Sample Code"/>
     <File Name="AtgScene.h" Rights="Sample Code"/>
@@ -104,6 +114,8 @@
     <File Name="XTLOnPC.cpp" Rights="Sample Code"/>
     <File Name="AtgSessionManager.h" Rights="Sample Code"/>
     <File Name="AtgSessionManager.cpp" Rights="Sample Code"/>
-    <File Name="AtgFramework2008.vcproj" Rights="Sample Code"/>
-    <File Name="AtgFrameworkWin322008.vcproj" Rights="Sample Code"/>
+    <File Name="AtgFramework2010.vcxproj" Rights="Sample Code"/>
+    <File Name="AtgFramework2010.vcxproj.filters" Rights="Sample Code"/>
+    <File Name="AtgFrameworkWin322010.vcxproj" Rights="Sample Code"/>
+    <File Name="AtgFrameworkWin322010.vcxproj.filters" Rights="Sample Code"/>
 </Rights>

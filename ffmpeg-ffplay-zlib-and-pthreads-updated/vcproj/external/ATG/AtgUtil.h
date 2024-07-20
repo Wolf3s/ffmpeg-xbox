@@ -38,7 +38,7 @@ namespace ATG
 #endif
 
 #ifndef RETURN_ON_FAIL
-#define RETURN_ON_FAIL(fn) { HRESULT hr; if ( FAILED( hr = (fn) ) ) return hr;}
+#define RETURN_ON_FAIL(fn) { HRESULT ATG_hr; if ( FAILED( ATG_hr = (fn) ) ) return ATG_hr;}
 #endif
 
 #ifndef RETURN_ON_NULL

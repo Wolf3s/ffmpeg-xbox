@@ -12,6 +12,81 @@
 
 namespace ATG
 {
+
+    //--------------------------------------------------------------------------------------
+    // Name: struct QUALITY_FLAG_STRING
+    // Desc: Maps identity  or head orientaion quality flags to human readable strings
+    //--------------------------------------------------------------------------------------
+    struct QUALITY_FLAG_STRING
+    {
+        DWORD dwFlag;
+        WCHAR* pwszPrompt;
+    };
+
+
+    //--------------------------------------------------------------------------------------
+    // Name: s_IdentityQualityStringTable[]
+    // Desc  List of strings representing quality flags to be displayed to the player.
+    //
+    // Note: The strings are listed in order of priority. When more than one flag is set, 
+    //       only the first matching string in the list is displayed.
+    //--------------------------------------------------------------------------------------
+    static const QUALITY_FLAG_STRING s_IdentityQualityStringTable[] =
+    {
+        { NUI_IDENTITY_QUALITY_ENVIRONMENT_TOO_DARK,            L"Make sure your room is well lit." },
+        { NUI_IDENTITY_QUALITY_ENVIRONMENT_TOO_BRIGHT,          L"Avoid pointing lights directly at the sensor." },
+
+        { NUI_IDENTITY_QUALITY_USER_OCCLUDED_FACE,              L"Don't cover your face." },
+        { NUI_IDENTITY_QUALITY_USER_OCCLUDED_BODY,              L"Put your hands down." },
+
+        { NUI_IDENTITY_QUALITY_USER_BODY_TURNED,                L"Face the sensor." },
+        { NUI_IDENTITY_QUALITY_USER_NOT_UPRIGHT,                L"Stand up straight." },
+
+        { NUI_IDENTITY_QUALITY_USER_FAR_AWAY,                   L"Move closer to the sensor." },
+        { NUI_IDENTITY_QUALITY_USER_CLOSE,                      L"Move away from the sensor." },
+
+        { NUI_IDENTITY_QUALITY_USER_CLIPPED_AT_LEFT,            L"Move to the right." },
+        { NUI_IDENTITY_QUALITY_USER_CLIPPED_AT_RIGHT,           L"Move to the left." },
+
+                                                                
+        // Displaying the following text is not enough to handle this situation correctly as it usually requires tilting the sensor 
+        // and should be handled by the title's play space management code.
+        { NUI_IDENTITY_QUALITY_USER_CLIPPED_AT_TOP,             L"You are too close. Move away from the sensor." },	
+
+        { NUI_IDENTITY_QUALITY_ENVIRONMENT_FACE_DETECT_FAILURE, L"Kinect can't see your face clearly.\nIf the problem persists, go to the Kinect Tuner." },
+
+        { NUI_IDENTITY_QUALITY_USER_CLIPPED_AT_BOTTOM,          L"" }, // This specific situation usually requires tilting the sensor and should be handled 
+                                                                       // by the title's play space management code. 
+    };
+
+    //--------------------------------------------------------------------------------------
+    // Name: s_HeadOrientationQualityStringTable[]
+    // Desc  List of strings representing quality flags to be displayed to the player.
+    //
+    // Note: The strings are listed in order of priority. When more than one flag is set, 
+    //       only the first matching string in the list is displayed.
+    //--------------------------------------------------------------------------------------
+    static const QUALITY_FLAG_STRING s_HeadOrientationQualityStringTable[] =
+    {
+        { NUI_HEAD_ORIENTATION_QUALITY_TOO_DARK,                L"Make sure your room is well lit." },
+
+        { NUI_HEAD_ORIENTATION_QUALITY_HANDS_OCCLUDING_FACE,    L"Don't cover your face." },
+
+        { NUI_HEAD_ORIENTATION_QUALITY_CLOSE_TO_LEFT,           L"Move to the right." },
+        { NUI_HEAD_ORIENTATION_QUALITY_CLOSE_TO_RIGHT,          L"Move to the left." },
+
+        // Displaying the following text is not enough to handle this situation correctly as it usually requires tilting the sensor 
+        // and should be handled by the title's play space management code.
+        { NUI_HEAD_ORIENTATION_QUALITY_CLOSE_TO_TOP,            L"You are too close. Move away from the sensor." },
+
+        { NUI_HEAD_ORIENTATION_QUALITY_FACE_DETECT_FAILURE,     L"Kinect can't see your face clearly.\nIf the problem persists, go to the Kinect Tuner." },
+
+        { NUI_HEAD_ORIENTATION_QUALITY_CLOSE_TO_BOTTOM,         L"" }, // This specific situation usually requires tilting the sensor and should be handled 
+                                                                       // by the title's play space management code. 
+
+        { NUI_HEAD_ORIENTATION_QUALITY_FAILURE,                 L"" }, // the orientation result is invalid
+    };
+
     //--------------------------------------------------------------------------------------
     // Outputs verbose error message from NUI errors
     //--------------------------------------------------------------------------------------
@@ -136,6 +211,56 @@ namespace ATG
             }
         }
     }
+
+
+    //--------------------------------------------------------------------------------------
+    // Name: GetQualityFlagPrompt()
+    // Desc: Returns a human readable text string that explains the most important quality 
+    //       flag.
+    //--------------------------------------------------------------------------------------
+    const WCHAR* GetQualityFlagPrompt( const QUALITY_FLAG_STRING* pQualityStringTable, DWORD dwQualityStringCount, DWORD dwQualityFlags )
+    {
+        WCHAR* pwszPrompt = L"";
+
+        if( dwQualityFlags > 0 )
+        {
+            for( DWORD i = 0; i < dwQualityStringCount; i++)
+            {
+                if( dwQualityFlags & pQualityStringTable[ i ].dwFlag )
+                {
+                    pwszPrompt = pQualityStringTable[ i ].pwszPrompt;
+                    break;
+                }
+            }
+        }
+
+        return pwszPrompt;
+    }
+
+
+    //--------------------------------------------------------------------------------------
+    // Name: GetIdentityQualityFlagPrompt()
+    // Desc: Returns a human readable text string that explains the most important quality 
+    //       flag.
+    //
+    // Note: See the s_IdentityQualityStringTable[] for the order of importance of the flags
+    //--------------------------------------------------------------------------------------
+    const WCHAR* GetIdentityQualityFlagPrompt( DWORD dwIdentityQualityFlags )
+    {
+        return  GetQualityFlagPrompt( s_IdentityQualityStringTable, _countof( s_IdentityQualityStringTable), dwIdentityQualityFlags );
+    }
+
+    //--------------------------------------------------------------------------------------
+    // Name: GetHeadOrientationQualityFlagPrompt()
+    // Desc: Returns a human readable text string that explains the most important quality 
+    //       flag.
+    //
+    // Note: See the s_HeadOrientationQualityStringTable[] for the order of importance of
+    //       the flags
+    //--------------------------------------------------------------------------------------
+    const WCHAR* GetHeadOrientationQualityFlagPrompt( DWORD dwHeadOrientationQualityFlags )
+    {
+        return  GetQualityFlagPrompt( s_HeadOrientationQualityStringTable, _countof( s_HeadOrientationQualityStringTable ), dwHeadOrientationQualityFlags );
+    }
+
 };
-
-

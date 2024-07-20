@@ -48,7 +48,6 @@ public:
     static D3DPRESENT_PARAMETERS m_d3dpp;
     static D3DDevice* m_pd3dDevice;
     static DWORD m_dwDeviceCreationFlags;
-	static void SetD3DDevice(D3DDevice* device);
 
     // Overridable functions
     virtual HRESULT Initialize() = 0;

@@ -53,6 +53,7 @@ public:
     // If the line width is less than 0, the screen space rect is drawn solid.
     static VOID DrawScreenSpaceLine( const XMFLOAT2& Origin, const XMFLOAT2& End, D3DCOLOR Color, FLOAT fLineWidth = 1 );
     static VOID DrawScreenSpaceLine( const XMFLOAT2& Origin, D3DCOLOR OriginColor, const XMFLOAT2& End, D3DCOLOR EndColor, FLOAT fLineWidth = 1 );
+    static VOID DrawScreenSpaceLineList( const XMFLOAT2 Points[], UINT PointCount, D3DCOLOR Color, FLOAT fLineWidth = 1 );
     static VOID DrawScreenSpaceRect( const XMFLOAT2& Origin, const XMFLOAT2& Size, FLOAT fLineWidth, D3DCOLOR Color );
     static VOID DrawScreenSpaceRect( const D3DRECT& Rect, FLOAT fLineWidth, D3DCOLOR Color );
     static VOID DrawScreenSpaceTexturedRect( const D3DRECT& Rect, const D3DBaseTexture* pTexture, BOOL bDepthTexture =

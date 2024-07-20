@@ -29,8 +29,8 @@ D3DDevice* Application::m_pd3dDevice = NULL;
 // The device-creation presentation params with reasonable defaults
 D3DPRESENT_PARAMETERS Application::m_d3dpp =
 {
-    1280,                // BackBufferWidth;
-    720,                // BackBufferHeight;
+    640,                // BackBufferWidth;
+    480,                // BackBufferHeight;
     D3DFMT_A8R8G8B8,    // BackBufferFormat;
     1,                  // BackBufferCount;
     D3DMULTISAMPLE_NONE,// MultiSampleType;
@@ -45,10 +45,6 @@ D3DPRESENT_PARAMETERS Application::m_d3dpp =
     D3DPRESENT_INTERVAL_IMMEDIATE, // FullScreen_PresentationInterval;
 };
 
-void Application::SetD3DDevice(D3DDevice* device) {
-	g_pd3dDevice = device;
-}
-
 // Extra flags to use at Direct3D device creation time
 DWORD Application::m_dwDeviceCreationFlags = 0;
 
@@ -61,13 +57,22 @@ VOID Application::Run()
 {
     HRESULT hr;
 
-    //LPDIRECT3D9 pD3D = Direct3DCreate9( D3D_SDK_VERSION );
+    // Create Direct3D
+    LPDIRECT3D9 pD3D = Direct3DCreate9( D3D_SDK_VERSION );
 
-   
-    //pD3D->Release();
+    // Create the D3D device
+    if( FAILED( hr = pD3D->CreateDevice( 0, D3DDEVTYPE_HAL, NULL,
+                                         m_dwDeviceCreationFlags,
+                                         &m_d3dpp, ( ::D3DDevice** )&m_pd3dDevice ) ) )
+    {
+        ATG_PrintError( "Could not create D3D device!\n" );
+        DebugBreak();
+    }
+
+    pD3D->Release();
 
     // Allow global access to the device
-    m_pd3dDevice = g_pd3dDevice;
+    g_pd3dDevice = m_pd3dDevice;
 
     // Initialize the app's device-dependent objects
     if( FAILED( hr = Initialize() ) )

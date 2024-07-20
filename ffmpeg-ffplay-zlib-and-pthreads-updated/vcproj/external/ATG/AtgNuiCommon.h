@@ -32,6 +32,9 @@ namespace ATG
     VOID NuiPrintError( HRESULT hResult, const CHAR* szFunctionName );
 
     VOID ApplyTiltCorrectionInPlayerSpace( NUI_SKELETON_FRAME* pDstSkeleton, const NUI_SKELETON_FRAME* pSrcSkeleton );
+
+    const WCHAR* GetIdentityQualityFlagPrompt( DWORD dwIdentityQualityFlags );
+    const WCHAR* GetHeadOrientationQualityFlagPrompt( DWORD dwHeadOrientationQualityFlags );
 };
 
 #endif // ATG_NUI_COMMON_H

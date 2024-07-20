@@ -448,6 +448,35 @@ VOID DebugDraw::DrawScreenSpaceLine( const XMFLOAT2& Origin, D3DCOLOR OriginColo
 }
 
 
+VOID DebugDraw::DrawScreenSpaceLineList( const XMFLOAT2 Points[], UINT PointCount, D3DCOLOR Color, FLOAT fLineWidth )
+{
+    ATG::MeshVertexPC* Vertices = new ATG::MeshVertexPC[ PointCount ];
+    for( UINT i = 0; i < PointCount; ++i )
+    {
+        Vertices[i].Position = XMFLOAT3( Points[i].x, Points[i].y, 0 );
+        Vertices[i].Color    = Color;
+    }
+
+    DWORD dwLineWidthSaved;
+    g_pd3dDevice->GetRenderState( D3DRS_LINEWIDTH, &dwLineWidthSaved );
+    g_pd3dDevice->SetRenderState( D3DRS_LINEWIDTH, *((DWORD*)&fLineWidth));
+
+    SimpleShaders::SetDeclPosColor();
+    SimpleShaders::BeginShader_PreTransformed_VertexColor();
+    g_pd3dDevice->SetRenderState( D3DRS_ZENABLE, FALSE );
+    g_pd3dDevice->SetRenderState( D3DRS_VIEWPORTENABLE, FALSE );
+    g_pd3dDevice->DrawPrimitiveUP( D3DPT_LINESTRIP, PointCount - 1, Vertices, sizeof( ATG::MeshVertexPC ) );
+    SimpleShaders::EndShader();
+    g_pd3dDevice->SetRenderState( D3DRS_VIEWPORTENABLE, TRUE );
+    g_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
+
+
+    g_pd3dDevice->SetRenderState( D3DRS_LINEWIDTH, dwLineWidthSaved );
+
+    delete[] Vertices;
+}
+
+
 VOID DebugDraw::DrawScreenSpaceRect( const D3DRECT& Rect, FLOAT fLineWidth, D3DCOLOR Color )
 {
     XMFLOAT2 Origin( ( FLOAT )Rect.x1, ( FLOAT )Rect.y1 );
