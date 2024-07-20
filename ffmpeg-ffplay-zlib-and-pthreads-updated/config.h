@@ -33,7 +33,11 @@
 #define ARCH_PARISC 0
 #ifdef _XBOX
 #define ARCH_PPC 0
+#ifdef XBMC_360
 #define ARCH_PPC64 0
+#else
+#define ARCH_PPC64 1
+#endif
 #else
 #define ARCH_PPC 0
 #define ARCH_PPC64 0
@@ -97,7 +101,11 @@
 #define HAVE_FAST_64BIT 1//XBOX ?
 #define HAVE_FAST_CLZ 1
 #define HAVE_FAST_CMOV 1
+#ifdef XBMC_360
 #define HAVE_FAST_UNALIGNED 0
+#else
+#define HAVE_FAST_UNALIGNED 1
+#endif
 #define HAVE_FORK 0
 #define HAVE_GETADDRINFO 0
 #define HAVE_GETHRTIME 0
@@ -107,8 +115,13 @@
 #define HAVE_STRUCT_RUSAGE_RU_MAXRSS 0
 #define HAVE_INET_ATON 0
 #define HAVE_INLINE_ASM 1
+#ifdef XBMC_360
 #define HAVE_ISATTY 1
 #define HAVE_LDBRX 0
+#else
+#define HAVE_ISATTY 0
+#define HAVE_LDBRX 1
+#endif
 #define HAVE_LIBDC1394_1 0
 #define HAVE_LIBDC1394_2 0
 #define HAVE_LLRINT 0
@@ -129,8 +142,13 @@
 #define HAVE_PLD 0
 #define HAVE_POSIX_MEMALIGN 0
 #define HAVE_ROUND 0
+#ifdef XBMC_360
 #define HAVE_ROUNDF 0
 #define HAVE_SDL 0
+#else
+#define HAVE_ROUNDF 1
+#define HAVE_SDL 1
+#endif
 #define HAVE_SDL_VIDEO_SIZE 0
 #define HAVE_SETMODE 1
 #define HAVE_SOCKLEN_T 1
@@ -169,6 +187,11 @@
 #define CONFIG_DEMUXERS 1
 #define CONFIG_ENCODERS 0
 #define CONFIG_FILTERS 1
+#ifdef XBMC_360
+#define CONFIG_FLOAT 1
+#else
+#define CONFIG_FLOAT 0
+#endif
 #define CONFIG_HWACCELS 1
 #define CONFIG_INDEVS 0
 #define CONFIG_MUXERS 1
@@ -178,7 +201,11 @@
 #define CONFIG_AANDCT 1
 #define CONFIG_AVCODEC 1
 #define CONFIG_AVDEVICE 0
+#ifdef XBMC_360
 #define CONFIG_AVFILTER 0
+#else
+#define CONFIG_AVFILTER 1
+#endif
 #define CONFIG_AVFILTER_LAVF 0
 #define CONFIG_AVFORMAT 1
 #define CONFIG_AVISYNTH 0
@@ -190,12 +217,20 @@
 #define CONFIG_DXVA2 0
 #define CONFIG_FASTDIV 1
 #define CONFIG_FFMPEG 1
+#ifdef XBMC_360
 #define CONFIG_FFPLAY 0
+#else
+#define CONFIG_FFPLAY 1
+#endif
 #define CONFIG_FFPROBE 1
 #define CONFIG_FFSERVER 0
 #define CONFIG_FFT 1
 #define CONFIG_GOLOMB 1
+#ifdef XBMC_360
 #define CONFIG_GPL 0
+#else
+#define CONFIG_GPL 1
+#endif
 #define CONFIG_GPROF 1
 #define CONFIG_GRAY 0
 #define CONFIG_H264DSP 1
@@ -228,8 +263,13 @@
 #define CONFIG_NETWORK 0
 #define CONFIG_NONFREE 0
 #define CONFIG_PIC 0
+#ifdef XBMC_360
 #define CONFIG_POSTPROC 0
 #define CONFIG_POWERPC_PERF 0
+#else
+#define CONFIG_POSTPROC 1
+#define CONFIG_POWERPC_PERF 1
+#endif
 #define CONFIG_RDFT 1
 #define CONFIG_RUNTIME_CPUDETECT 0
 #define CONFIG_SHARED 0
@@ -242,7 +282,11 @@
 #define CONFIG_VDPAU 0
 #define CONFIG_VERSION3 0
 #define CONFIG_X11GRAB 0
+#ifdef XBMC_360
 #define CONFIG_ZLIB 0
+#else
+#define CONFIG_ZLIB 1
+#endif
 #define CONFIG_AVUTIL 1
 #define CONFIG_GPLV3 0
 #define CONFIG_LGPLV3 0
@@ -331,7 +375,11 @@
 #define CONFIG_PCX_DECODER 1
 #define CONFIG_PGM_DECODER 1
 #define CONFIG_PGMYUV_DECODER 1
-#define CONFIG_PNG_DECODER 0
+#ifdef XBMC_360
+#define CONFIG_PNG_DECODER 1
+#else
+#define CONFIG_PNG_DECODER 1
+#endif
 #define CONFIG_PPM_DECODER 1
 #define CONFIG_PTX_DECODER 1
 #define CONFIG_QDRAW_DECODER 1
@@ -387,7 +435,11 @@
 #define CONFIG_XAN_WC3_DECODER 1
 #define CONFIG_XL_DECODER 1
 #define CONFIG_YOP_DECODER 1
+#ifdef XBMC_360
 #define CONFIG_ZLIB_DECODER 0
+#else
+#define CONFIG_ZLIB_DECODER 1
+#endif
 #define CONFIG_ZMBV_DECODER 0
 #define CONFIG_AAC_DECODER 1
 #define CONFIG_AC3_DECODER 1
