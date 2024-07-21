@@ -1149,10 +1149,10 @@ int MPV_frame_start(MpegEncContext *s, AVCodecContext *avctx)
 
         update_noise_reduction(s);
     }
-
-/*    if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration)
+#ifdef XBMC_360
+   if(CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration)
         return ff_xvmc_field_start(s, avctx);
-HACK */
+#endif
     return 0;
 }
 
