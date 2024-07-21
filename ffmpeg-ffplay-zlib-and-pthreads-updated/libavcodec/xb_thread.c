@@ -259,7 +259,7 @@ static int thread_init(AVCodecContext *avctx)
     c->job_size = 0;
     c->done = 0;
 #ifndef XBMC_360
-	ptw32_processInitialize();
+	__ptw32_processInitialize();
 #endif
     pthread_cond_init(&c->current_job_cond, NULL);
     pthread_cond_init(&c->last_job_cond, NULL);

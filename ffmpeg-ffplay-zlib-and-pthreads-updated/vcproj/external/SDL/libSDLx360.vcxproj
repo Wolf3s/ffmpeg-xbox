@@ -316,6 +316,7 @@
       <PrecompiledHeaderOutputFile>$(OutDir)$(ProjectName).pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level2</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
@@ -376,6 +377,7 @@
     <ClCompile Include="SDL\src\video\xbox\SDL_xboxvideo.c" />
     <ClCompile Include="SDL\src\audio\xbox\xb_PCM.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">CompileAsCpp</CompileAs>
     </ClCompile>
     <ClCompile Include="SDL\SDL.c" />
     <ClCompile Include="SDL\src\events\SDL_active.c" />

@@ -234,7 +234,7 @@
     <ClCompile>
       <StructMemberAlignment>Default</StructMemberAlignment>
       <CompileAs>CompileAsC</CompileAs>
-      <AdditionalIncludeDirectories>..\external;..\external\include;..\..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\external;..\external\include;..\external\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;_XBOX;HAVE_AV_CONFIG_H;MSC_STRUCTS;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan</PreprocessorDefinitions>
       <DisableSpecificWarnings>4305</DisableSpecificWarnings>
       <ForcedIncludeFiles>config.h</ForcedIncludeFiles>

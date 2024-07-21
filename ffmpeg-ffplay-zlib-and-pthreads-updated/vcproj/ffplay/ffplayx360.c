@@ -33,17 +33,17 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <string.h>
-#include "tools\ini.h"
+#include "ini.h"
 
 //#if DEFINED(0) //def _MSC_VER
 #include "libavformat\os_support.h"
 #include "libavutil\libm.h"
 //#endif
-#include "Tools\LaunchData.h"
-#include "Tools\FileMan.h"
+#include "LaunchData.h"
+#include "FileMan.h"
 //#include "Tools\xmv.h"
-#include "SDL_Image\SDL_image.h"
-#include "SDL_ttf360\SDL_ttf.h"
+#include "SDL_image.h"
+#include "SDL_ttf.h"
 #include "config.h"
 #include <inttypes.h>
 #include <math.h>

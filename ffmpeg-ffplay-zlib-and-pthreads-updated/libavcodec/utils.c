@@ -1150,7 +1150,7 @@ void avcodec_default_free_buffers(AVCodecContext *s){
 
     s->internal_buffer_count=0;
 #ifndef XBMC_360
-	ptw32_processTerminate();
+	__ptw32_processTerminate();
 #endif
 }
 

@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\cmdutils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\tools\ini.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ffplayx360.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -39,6 +36,9 @@
     <ClCompile Include="..\..\tools\xbox 360\XMV.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\tools\xbox 360\ini.c">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\cmdutils.h">
@@ -48,9 +48,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\tools\FileMan.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\tools\ini.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\tools\LaunchData.h">
@@ -69,6 +66,9 @@
       <Filter>Source Files\ui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\tools\xbox 360\XMV.h">
+      <Filter>Source Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tools\xbox 360\ini.h">
       <Filter>Source Files\ui</Filter>
     </ClInclude>
   </ItemGroup>

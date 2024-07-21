@@ -7,9 +7,7 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
-int cDrives::Mount( string MountPoint )
+int cDrives::Mount( std::string MountPoint )
 {
 	char MountConv[260];
 	sprintf_s( MountConv,"\\??\\%s", MountPoint.c_str() );
@@ -61,8 +59,8 @@ int cDrives::Mount( string MountPoint )
 	else return 1;
 }
 
-std::vector<string> cDrives::mountAll() {
-	std::vector<string> drives;
+std::vector<std::string> cDrives::mountAll() {
+	std::vector<std::string> drives;
 	for (int x = DEVICE_FIXED_START; x < DEVICE_REMOVABLE_END; x++) {
 		std::string MP ="";
 		switch (x) {
@@ -113,7 +111,7 @@ std::vector<string> cDrives::mountAll() {
 	return drives;
 }
 
-int cDrives::DriveMounted(string path)
+int cDrives::DriveMounted(std::string path)
 {
         WIN32_FIND_DATA findFileData;
         memset(&findFileData,0,sizeof(WIN32_FIND_DATA));

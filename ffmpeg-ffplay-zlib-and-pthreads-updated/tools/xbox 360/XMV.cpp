@@ -135,10 +135,11 @@ void XMVMain(const char* filename)
     atgApp.Run();
 }
 
+#if 0
 void SetD3DDevice(D3DDevice* device) {
 	atgApp.SetD3DDevice((ATG::D3DDevice*)device);
 }
-
+#endif
 
 //--------------------------------------------------------------------------------------
 // Name: InitVideoScreen()

@@ -44,10 +44,10 @@
 #   include "sh4/bswap.h"
 #elif ARCH_X86
 #   include "x86/bswap.h"
-#endif
-#ifdef _XBOX
+#elif _XBOX
 #   include "xbox360/bswap.h"
 #endif
+
 
 
 #endif /* HAVE_AV_CONFIG_H */

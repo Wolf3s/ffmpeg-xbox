@@ -9,8 +9,9 @@
 #endif
 
 		extern void XMVMain(const char* filename);
+#if 0
 		extern void SetD3DDevice(D3DDevice* device);
-
+#endif
 #ifdef __cplusplus
 	}
 #endif

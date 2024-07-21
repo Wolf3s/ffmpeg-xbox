@@ -274,8 +274,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\external\ATG;..\external\include;..\..\;..\external\SDL\SDL;..\external\SDL_Image;..\external\SDL_ttf360;..\..\libavcodec;..\..\libavdevice\;..\..\libavfilter\;..\..\libavformat;..\..\libavutil;..\..\libpostproc;..\..\libswscale</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\external\SDL_ttf360\include\;..\external\SDL_ttf360\include\freetype\;..\external\SDL_Image\graphics;..\external\ATG;..\external\include;..\..\;..\external\SDL\SDL;..\external\SDL_Image;..\external\SDL_ttf360;..\..\libavcodec;..\..\libavdevice\;..\..\libavfilter\;..\..\libavformat;..\..\libavutil;..\..\libpostproc;..\..\libswscale;..\..\tools\xbox 360;..\external</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>XBOX;_XBOX;NDEBUG;_CRT_DISABLE_PERFCRIT_LOCKS;MUST_THREAD_EVENTS;_M_PPCBE;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -283,10 +283,13 @@
       <CompileAs>CompileAsC</CompileAs>
       <DisableSpecificWarnings>4305</DisableSpecificWarnings>
       <ForcedIncludeFiles>config.h</ForcedIncludeFiles>
+      <UndefinePreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN</UndefinePreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>xapilib.lib;d3d9.lib;d3dx9.lib;xgraphics.lib;xboxkrnl.lib;xnet.lib;xaudio2.lib;xact3.lib;x3daudio.lib;xmcore.lib;vcomp.lib;libsdl360.lib;libavutil360.lib;libavcodec360.lib;libavformat360.lib;libswscale360.lib;libavfilter360.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>xapilib.lib;d3d9.lib;d3dx9.lib;xgraphics.lib;xboxkrnl.lib;xnet.lib;xaudio2.lib;xact3.lib;x3daudio.lib;xmcore.lib;vcomp.lib;zlib.lib;libsdl360.lib;libpng.lib;SDL_image.lib;SDL_ttf360.lib;libavutil.lib;libswscale.lib;libavcodec.lib;libavformat.lib;libavfilter.lib;AtgFramework.lib;pthreads.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)$(Platform)\$(Configuration);..\external\ATG\Release;..\external\lpng144\projects\visualc71\Xbox 360\LIB Release;..\external\SDL\Xbox 360\Release;..\external\SDL_Image\Release\;..\external\SDL_Image\graphics\lib;..\external\SDL_ttf360\Release\;..\external\zlib\Release;..\pthreads\Release;..\libavcodec\Release;..\libavfilter\Release;..\libavformat\Release;..\libavutil\Release;..\libswscale\Release;..\ffplay\Xbox 360\Release</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>XAPI.lib</IgnoreSpecificDefaultLibraries>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -386,8 +389,8 @@
       <Optimization>Full</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\external\include;..\..\;..\..\SDL\SDL\include;..\..\Common</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>XBOX;_XBOX;NDEBUG;LTCG;_CRT_DISABLE_PERFCRIT_LOCKS;MUST_THREAD_EVENTS;_M_PPCBE</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\external\include;..\..\;..\external\SDL\SDL\include;..\external\SDL_ttf360;..\external\SDL_Image;..\external\ATG;..\..\tools\xbox 360;..\external\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>XBOX;_XBOX;NDEBUG;LTCG;_CRT_DISABLE_PERFCRIT_LOCKS;MUST_THREAD_EVENTS;_M_PPCBE;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -404,7 +407,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>xapilib.lib;d3d9ltcg.lib;d3dx9.lib;xgraphics.lib;xboxkrnl.lib;xnet.lib;xaudio2.lib;xact3.lib;x3daudioltcg.lib;xmcoreltcg.lib;xmedia2.lib;xmcore.lib;vcomp.lib;zlib.lib;libsdl360.lib;libpng.lib;SDL_image.lib;SDL_ttf360.lib;libavutil.lib;libswscale.lib;libavcodec.lib;libavformat.lib;libavfilter.lib;AtgFramework.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)$(Platform)\$(Configuration);..\external\ATG\Release;..\external\lpng144\projects\visualc71\Xbox 360\LIB Release;..\external\SDL\Xbox 360\Release;..\external\SDL_Image\Release\;..\external\SDL_ttf360\Release\;..\external\zlib\Release;..\pthreads\Release;..\libavcodec\Release;..\libavfilter\Release;..\libavformat\Release;..\libavutil\Release;..\libswscale\Release;..\ffplay\Xbox 360\Release</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>XAPID.lib;xapilib.lib</IgnoreSpecificDefaultLibraries>
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
@@ -419,21 +422,33 @@
     <ClCompile Include="..\..\cmdutils.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">CompileAsC</CompileAs>
     </ClCompile>
-    <ClCompile Include="..\..\tools\ini.c" />
-    <ClCompile Include="..\..\tools\xbox 360\FileMan.cpp" />
-    <ClCompile Include="..\..\tools\xbox 360\LaunchData.cpp" />
-    <ClCompile Include="..\..\tools\xbox 360\Mount.cpp" />
-    <ClCompile Include="..\..\tools\xbox 360\XMV.cpp" />
+    <ClCompile Include="..\..\tools\xbox 360\FileMan.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">CompileAsCpp</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\..\tools\xbox 360\ini.c" />
+    <ClCompile Include="..\..\tools\xbox 360\LaunchData.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">CompileAsCpp</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\..\tools\xbox 360\Mount.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">CompileAsCpp</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\..\tools\xbox 360\XMV.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">CompileAsCpp</CompileAs>
+    </ClCompile>
     <ClCompile Include="ffplayx360.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\cmdutils.h" />
     <ClInclude Include="..\..\config.h" />
     <ClInclude Include="..\..\tools\FileMan.h" />
-    <ClInclude Include="..\..\tools\ini.h" />
     <ClInclude Include="..\..\tools\LaunchData.h" />
     <ClInclude Include="..\..\tools\Mount.h" />
     <ClInclude Include="..\..\tools\xbox 360\FileMan.h" />
+    <ClInclude Include="..\..\tools\xbox 360\ini.h" />
     <ClInclude Include="..\..\tools\xbox 360\LaunchData.h" />
     <ClInclude Include="..\..\tools\xbox 360\Mount.h" />
     <ClInclude Include="..\..\tools\xbox 360\XMV.h" />

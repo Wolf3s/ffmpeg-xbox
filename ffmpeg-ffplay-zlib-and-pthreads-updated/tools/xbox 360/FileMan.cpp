@@ -7,9 +7,6 @@
 #include "..\SDL_ttf360\SDL_ttf.h"
 #include "xboxdefs.h"
 
-using namespace std;
-
-
 struct FileItem {
 	std::string path;
 	bool isDir;
@@ -17,7 +14,7 @@ struct FileItem {
 
 bool atRoot;
 std::string CurrentPath;
-std::vector<string> drives;
+std::vector<std::string> drives;
 int x = 50;
 int y = 50;
 
@@ -196,7 +193,7 @@ const char *getFileManager() {
 			if (SDL_JoystickGetButton(joy, XBOX_BUTTON_B)){
 				if (!atRoot) {
 					int pos = CurrentPath.rfind("\\");
-					if (pos != string::npos) {
+					if (pos != std::string::npos) {
 						CurrentPath = CurrentPath.substr(0, pos);
 						GetFileList();
 						activeItem = 0;

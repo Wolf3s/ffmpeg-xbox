@@ -47,5 +47,5 @@ class cDrives {
 public:
 	static int Mount( std::string MountPoint );
 	static int DriveMounted( std::string path);
-	static std::vector<string> mountAll();
+	static std::vector<std::string> mountAll();
 };

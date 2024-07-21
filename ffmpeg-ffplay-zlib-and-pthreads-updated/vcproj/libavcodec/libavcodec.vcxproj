@@ -55,7 +55,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfAtl>false</UseOfAtl>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'" Label="Configuration">
@@ -250,7 +250,7 @@
       <Optimization>Full</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <PreprocessorDefinitions>NDEBUG;XBOX;_LIB;_XBOX;HAVE_AV_CONFIG_H;MSC_STRUCTS;_CRT_DISABLE_PERFCRIT_LOCKS;_M_PPCBE;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;_XBOX;XBOX;WIN32;HAVE_AV_CONFIG_H;inline=__inline;open=_open;snprintf=_snprintf;tempnam=_tempnam;isnan=_isnan;_CRT_DISABLE_PERFCRIT_LOCKS;_M_PPCBE;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4305</DisableSpecificWarnings>
       <ForcedIncludeFiles>libavutil/intmath.h;config.h</ForcedIncludeFiles>
     </ClCompile>
